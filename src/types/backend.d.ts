@@ -35,7 +35,13 @@ export interface IAccount {
     }
 }
 
-export interface IGetAccount extends Omit<IAccount, "access_token"> { }
+export interface IGetAccount extends Omit<IAccount, "access_token"> {
+    user: IAccount['user'] & {
+        age?: number;
+        gender?: string;
+        address?: string;
+    }
+}
 
 export interface ICompany {
     id?: string;
