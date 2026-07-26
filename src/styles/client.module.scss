@@ -273,70 +273,70 @@
     box-shadow: 0 4px 14px rgba(22, 119, 255, 0.35);
 }
 
+.search-content {
+    position: relative;
+    width: 100%;
+    padding: 48px 0 56px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #1a2332 0%, #222831 45%, #2d3a52 100%);
+    overflow: hidden;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 20% 30%, rgba(22, 119, 255, 0.25) 0%, transparent 45%),
+            radial-gradient(circle at 85% 70%, rgba(99, 179, 237, 0.15) 0%, transparent 40%);
+        pointer-events: none;
+    }
+
+    &::after {
+        content: "";
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        right: -80px;
+        top: -120px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        pointer-events: none;
+    }
+
+    .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    .search-hero-text {
+        color: #fff;
+
+        h1 {
+            font-size: clamp(1.75rem, 4vw, 2.35rem);
+        }
+    }
+
+    .search-hero-badge {
+        color: #91caff;
+        background: rgba(22, 119, 255, 0.15);
+        border-color: rgba(145, 202, 255, 0.35);
+    }
+
+    .search-hero-subtitle {
+        color: rgba(255, 255, 255, 0.78);
+    }
+
+    .search-form-card {
+        box-shadow:
+            0 4px 24px rgba(0, 0, 0, 0.12),
+            0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+}
+
 .home-section {
 
     .home-body {
         padding-bottom: 24px;
-    }
-
-    .search-content {
-        position: relative;
-        width: 100%;
-        padding: 48px 0 56px;
-        margin-bottom: 8px;
-        background: linear-gradient(135deg, #1a2332 0%, #222831 45%, #2d3a52 100%);
-        overflow: hidden;
-
-        &::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 20% 30%, rgba(22, 119, 255, 0.25) 0%, transparent 45%),
-                radial-gradient(circle at 85% 70%, rgba(99, 179, 237, 0.15) 0%, transparent 40%);
-            pointer-events: none;
-        }
-
-        &::after {
-            content: "";
-            position: absolute;
-            width: 320px;
-            height: 320px;
-            right: -80px;
-            top: -120px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            pointer-events: none;
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
-        }
-
-        .search-hero-text {
-            color: #fff;
-
-            h1 {
-                font-size: clamp(1.75rem, 4vw, 2.35rem);
-            }
-        }
-
-        .search-hero-badge {
-            color: #91caff;
-            background: rgba(22, 119, 255, 0.15);
-            border-color: rgba(145, 202, 255, 0.35);
-        }
-
-        .search-hero-subtitle {
-            color: rgba(255, 255, 255, 0.78);
-        }
-
-        .search-form-card {
-            box-shadow:
-                0 4px 24px rgba(0, 0, 0, 0.12),
-                0 0 0 1px rgba(255, 255, 255, 0.06);
-        }
     }
 
     .empty {

@@ -99,7 +99,7 @@ const SearchClient = () => {
                                 allowClear
                                 size="large"
                                 suffixIcon={null}
-                                className={styles['search-select']}
+                                style={{ width: '100%' }}
                                 placeholder={
                                     <>
                                         <MonitorOutlined className={styles['search-select-icon']} /> Tìm theo kỹ năng...
@@ -117,7 +117,7 @@ const SearchClient = () => {
                                 allowClear
                                 size="large"
                                 suffixIcon={null}
-                                className={styles['search-select']}
+                                style={{ width: '100%' }}
                                 placeholder={
                                     <>
                                         <EnvironmentOutlined className={styles['search-select-icon']} /> Địa điểm...

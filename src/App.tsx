@@ -44,7 +44,7 @@ const LayoutClient = () => {
   }, [location]);
 
   return (
-    <div className='layout-app' ref={rootRef}>
+    <div className={styles['layout-app']} ref={rootRef}>
       <Header searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       <div className={styles['content-app']}>
         <Outlet context={[searchTerm, setSearchTerm]} />
