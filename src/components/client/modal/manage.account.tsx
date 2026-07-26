@@ -1,12 +1,11 @@
-import { Button, Col, Form, Input, Modal, Row, Select, Table, Tabs, message, notification } from "antd";
+import { Button, Col, Form, Input, Modal, Row, Select, Table, Tabs, Tag, message, notification } from "antd";
 import { isMobile } from "react-device-detect";
 import type { TabsProps } from 'antd';
 import { IResume, ISubscribers, IUser } from "@/types/backend";
 import { useState, useEffect } from 'react';
-import { callCreateSubscriber, callFetchAllSkill, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber, callUpdateAccount, callChangePassword, callFetchAccount } from "@/config/api";
+import { callCreateSubscriber, callFetchAllSkill, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber, callUpdateAccount, callChangePassword, callFetchAccount, callSendJobEmail } from "@/config/api";
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { MonitorOutlined } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setUserLoginInfo } from "@/redux/slice/accountSlide";
 
@@ -285,9 +284,11 @@ const UserChangePassword = () => {
     );
 };
 
-const JobByEmail = (props: any) => {
+const JobByEmail = () => {
     const [form] = Form.useForm();
     const user = useAppSelector(state => state.account.user);
+    const selectedSkillIds = Form.useWatch('skills', form) ?? [];
+    const [loading, setLoading] = useState(false);
     const [optionsSkills, setOptionsSkills] = useState<{
         label: string;
         value: string;
@@ -295,24 +296,95 @@ const JobByEmail = (props: any) => {
 
     const [subscriber, setSubscriber] = useState<ISubscribers | null>(null);
 
+    const selectedSkillLabels = selectedSkillIds.map((id: string) => {
+        const found = optionsSkills.find(item => item.value === String(id));
+        return found?.label ?? id;
+    });
+
+    const sendJobEmail = async () => {
+        const emailRes = await callSendJobEmail();
+        if (emailRes?.data?.sent && emailRes.data.jobCount > 0) {
+            notification.success({
+                message: 'Đã gửi email job',
+                description: `${emailRes.data.message}. Kiểm tra Gmail: ${user.email}`,
+                duration: 6,
+            });
+        } else {
+            notification.warning({
+                message: 'Đã lưu kỹ năng',
+                description: emailRes?.data?.message
+                    ?? 'Chưa gửi email — chưa có job khớp skill bạn chọn.',
+                duration: 6,
+            });
+        }
+    };
+
     useEffect(() => {
         const init = async () => {
             await fetchSkill();
             const res = await callGetSubscriberSkills();
             if (res && res.data) {
                 setSubscriber(res.data);
-                const d = res.data.skills;
-                const arr = d.map((item: any) => {
-                    return {
-                        label: item.name as string,
-                        value: item.id + "" as string
-                    }
-                });
-                form.setFieldValue("skills", arr);
+                const skillIds = (res.data.skills ?? []).map((item: any) => String(item.id));
+                form.setFieldValue("skills", skillIds);
             }
         }
         init();
     }, [])
+
+    const normalizeSkillIds = (skills: any[]) => {
+        return skills?.map((item: any) => {
+            if (typeof item === 'object' && item !== null) {
+                const id = item.value ?? item.id;
+                return { id: Number(id) };
+            }
+            return { id: Number(item) };
+        }) ?? [];
+    };
+
+    const onFinish = async (values: any) => {
+        const { skills } = values;
+        const arr = normalizeSkillIds(skills);
+        setLoading(true);
+
+        try {
+            if (!subscriber?.id) {
+                const data = {
+                    email: user.email,
+                    name: user.name,
+                    skills: arr
+                }
+
+                const res = await callCreateSubscriber(data);
+                if (!res.data) {
+                    notification.error({
+                        message: 'Có lỗi xảy ra',
+                        description: res.message
+                    });
+                    return;
+                }
+                setSubscriber(res.data);
+            } else {
+                const res = await callUpdateSubscriber({
+                    id: subscriber.id,
+                    skills: arr
+                });
+                if (!res.data) {
+                    notification.error({
+                        message: 'Có lỗi xảy ra',
+                        description: res.message
+                    });
+                    return;
+                }
+                setSubscriber(res.data);
+            }
+
+            message.success("Đã lưu kỹ năng quan tâm");
+            await sendJobEmail();
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const fetchSkill = async () => {
         let query = `page=1&size=100&sort=createdAt,desc`;
@@ -329,56 +401,11 @@ const JobByEmail = (props: any) => {
         }
     }
 
-    const onFinish = async (values: any) => {
-        const { skills } = values;
-
-        const arr = skills?.map((item: any) => {
-            if (item?.id) return { id: item.id };
-            return { id: item }
-        });
-
-        if (!subscriber?.id) {
-            //create subscriber
-            const data = {
-                email: user.email,
-                name: user.name,
-                skills: arr
-            }
-
-            const res = await callCreateSubscriber(data);
-            if (res.data) {
-                message.success("Cập nhật thông tin thành công");
-                setSubscriber(res.data);
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
-
-
-        } else {
-            //update subscriber
-            const res = await callUpdateSubscriber({
-                id: subscriber?.id,
-                skills: arr
-            });
-            if (res.data) {
-                message.success("Cập nhật thông tin thành công");
-                setSubscriber(res.data);
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
-            }
-        }
-
-
-    }
-
     return (
         <>
+            <p style={{ marginBottom: 16, color: '#666' }}>
+                Chọn kỹ năng bạn quan tâm. Khi bấm <strong>Cập nhật & gửi email</strong>, hệ thống sẽ tìm job khớp skill và gửi về <strong>{user.email}</strong>.
+            </p>
             <Form
                 onFinish={onFinish}
                 form={form}
@@ -396,18 +423,25 @@ const JobByEmail = (props: any) => {
                                 allowClear
                                 suffixIcon={null}
                                 style={{ width: '100%' }}
-                                placeholder={
-                                    <>
-                                        <MonitorOutlined /> Tìm theo kỹ năng...
-                                    </>
-                                }
-                                optionLabelProp="label"
+                                placeholder="Tìm theo kỹ năng..."
                                 options={optionsSkills}
                             />
                         </Form.Item>
                     </Col>
+                    {selectedSkillLabels.length > 0 && (
+                        <Col span={24}>
+                            <div style={{ marginBottom: 8, color: '#666' }}>Kỹ năng đã chọn:</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {selectedSkillLabels.map((label: string) => (
+                                    <Tag key={label} color="blue">{label}</Tag>
+                                ))}
+                            </div>
+                        </Col>
+                    )}
                     <Col span={24}>
-                        <Button onClick={() => form.submit()}>Cập nhật</Button>
+                        <Button type="primary" loading={loading} onClick={() => form.submit()}>
+                            Cập nhật & gửi email
+                        </Button>
                     </Col>
                 </Row>
             </Form>

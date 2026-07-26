@@ -33,6 +33,10 @@ export const callChangePassword = (currentPassword: string, newPassword: string)
     return axios.post<IBackendRes<string>>('/api/v1/auth/change-password', { currentPassword, newPassword })
 }
 
+export const callSendJobEmail = () => {
+    return axios.get<IBackendRes<{ sent: boolean; jobCount: number; email: string; message: string }>>('/api/v1/email/me')
+}
+
 /**
  * Upload single file
  */

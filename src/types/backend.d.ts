@@ -174,10 +174,10 @@ export interface IRole {
 }
 
 export interface ISubscribers {
-    id?: string;
+    id?: string | number;
     name?: string;
     email?: string;
-    skills: string[];
+    skills: { id: number | string }[] | any[];
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;
