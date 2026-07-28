@@ -76,13 +76,13 @@ const ModalUser = (props: IProps) => {
         }
 
         const payloadCompany = companyId != null && companyId !== ''
-            ? { id: Number(companyId), name: company?.label ?? company?.name ?? '' }
+            ? { id: String(companyId), name: company?.label ?? company?.name ?? '' }
             : null;
 
-        const payloadRole = { id: Number(roleId), name: '' as string };
+        const payloadRole = { id: String(roleId), name: '' as string };
 
         if (dataInit?.id) {
-            const user = {
+            const user: IUser = {
                 id: dataInit.id,
                 name,
                 email,
@@ -106,7 +106,7 @@ const ModalUser = (props: IProps) => {
                 });
             }
         } else {
-            const user = {
+            const user: IUser = {
                 name,
                 email,
                 password,
