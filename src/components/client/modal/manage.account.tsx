@@ -1,9 +1,9 @@
-import { Button, Col, Form, Input, Modal, Row, Select, Space, Table, Tabs, Tag, message, notification } from "antd";
+import { Alert, Button, Col, Form, Input, Modal, Row, Select, Space, Table, Tabs, Tag, message, notification } from "antd";
 import { isMobile } from "react-device-detect";
 import type { TabsProps } from 'antd';
 import { IResume, ISubscribers, IUser } from "@/types/backend";
 import { useState, useEffect, useCallback } from 'react';
-import { callCreateSubscriber, callFetchAllSkill, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber, callUpdateAccount, callChangePassword, callFetchAccount, callSendJobEmail } from "@/config/api";
+import { callCreateSubscriber, callFetchAllSkill, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber, callUpdateAccount, callChangePassword, callFetchAccount, callSendJobEmail, callUnsubscribeJobEmail } from "@/config/api";
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
@@ -337,6 +337,9 @@ const JobByEmail = () => {
     }[]>([]);
 
     const [subscriber, setSubscriber] = useState<ISubscribers | null>(null);
+    const [unsubLoading, setUnsubLoading] = useState(false);
+
+    const isUnsubscribed = subscriber?.id && subscriber.subscribed === false;
 
     const selectedSkillLabels = selectedSkillIds.map((id: string) => {
         const found = optionsSkills.find(item => item.value === String(id));
@@ -443,11 +446,33 @@ const JobByEmail = () => {
         }
     }
 
+    const onUnsubscribe = async () => {
+        setUnsubLoading(true);
+        try {
+            const res = await callUnsubscribeJobEmail();
+            if (res?.data) {
+                setSubscriber(prev => (prev ? { ...prev, subscribed: false } : prev));
+                notification.success({ message: res.data.message ?? 'Đã hủy nhận email job' });
+            }
+        } finally {
+            setUnsubLoading(false);
+        }
+    };
+
     return (
         <>
             <p style={{ marginBottom: 16, color: '#666' }}>
-                Chọn kỹ năng bạn quan tâm. Khi bấm <strong>Cập nhật & gửi email</strong>, hệ thống sẽ tìm job khớp skill và gửi về <strong>{user.email}</strong>.
+                Chọn kỹ năng quan tâm. Email chỉ gồm <strong>job mới</strong> kể từ lần gửi trước.
+                Hệ thống tự gửi lúc <strong>8:00 sáng</strong> (giờ VN) mỗi ngày tới <strong>{user.email}</strong>.
             </p>
+            {isUnsubscribed && (
+                <Alert
+                    type="warning"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                    message="Bạn đã hủy nhận email job. Bấm Cập nhật & gửi email để đăng ký lại."
+                />
+            )}
             <Form
                 onFinish={onFinish}
                 form={form}
@@ -484,6 +509,16 @@ const JobByEmail = () => {
                         <Button type="primary" loading={loading} onClick={() => form.submit()}>
                             Cập nhật & gửi email
                         </Button>
+                        {subscriber?.id && subscriber.subscribed !== false && (
+                            <Button
+                                danger
+                                style={{ marginLeft: 12 }}
+                                loading={unsubLoading}
+                                onClick={onUnsubscribe}
+                            >
+                                Hủy nhận email
+                            </Button>
+                        )}
                     </Col>
                 </Row>
             </Form>

@@ -37,6 +37,10 @@ export const callSendJobEmail = () => {
     return axios.get<IBackendRes<{ sent: boolean; jobCount: number; email: string; message: string }>>('/api/v1/email/me')
 }
 
+export const callUnsubscribeJobEmail = () => {
+    return axios.delete<IBackendRes<{ message: string }>>('/api/v1/subscribers/me')
+}
+
 /**
  * Upload single file
  */

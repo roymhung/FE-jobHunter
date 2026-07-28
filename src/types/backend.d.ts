@@ -178,6 +178,8 @@ export interface ISubscribers {
     name?: string;
     email?: string;
     skills: { id: number | string }[] | any[];
+    subscribed?: boolean;
+    lastEmailSentAt?: string;
     createdBy?: string;
     isDeleted?: boolean;
     deletedAt?: boolean | null;

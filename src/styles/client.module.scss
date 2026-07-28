@@ -197,11 +197,50 @@
 
         .card-customize {
             height: 200px;
-            width: 200px;
+            width: 100%;
+            max-width: 200px;
             margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            img {
+                max-width: 200px;
+                max-height: 160px;
+                object-fit: contain;
+            }
         }
     }
+}
 
+.company-section-paginated {
+    .company-content {
+        padding-top: 24px;
+    }
+}
+
+.company-grid-paginated {
+    min-height: 780px;
+}
+
+.company-card-item {
+    height: 350px;
+
+    :global(.ant-card-body) {
+        padding-top: 12px;
+    }
+}
+
+.company-card-name {
+    text-align: center;
+    margin: 0;
+    font-size: 16px;
+}
+
+.company-card-placeholder {
+    height: 350px;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 

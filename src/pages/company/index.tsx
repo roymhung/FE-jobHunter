@@ -7,9 +7,7 @@ const ClientCompanyPage = (props: any) => {
         <div className={styles["container"]} style={{ marginTop: 20 }}>
             <Row gutter={[20, 20]}>
                 <Col span={24}>
-                    <CompanyCard
-                        showPagination={true}
-                    />
+                    <CompanyCard showPagination pageSize={8} />
                 </Col>
             </Row>
         </div>
