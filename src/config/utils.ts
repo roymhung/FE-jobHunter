@@ -73,6 +73,23 @@ export const getLocationName = (value: string) => {
     return 'unknown'
 }
 
+export type ResumeStatus = 'PENDING' | 'REVIEWING' | 'APPROVED' | 'REJECTED';
+
+export const RESUME_STATUS_META: Record<
+    ResumeStatus,
+    { label: string; color: string }
+> = {
+    PENDING: { label: 'Chờ duyệt', color: 'gold' },
+    REVIEWING: { label: 'Đang xem xét', color: 'processing' },
+    APPROVED: { label: 'Đã duyệt', color: 'success' },
+    REJECTED: { label: 'Từ chối', color: 'error' },
+};
+
+export const getResumeStatusTag = (status?: string) => {
+    const key = (status ?? 'PENDING') as ResumeStatus;
+    return RESUME_STATUS_META[key] ?? { label: status ?? '—', color: 'default' };
+};
+
 export function colorMethod(method: "POST" | "PUT" | "GET" | "DELETE" | string) {
     switch (method) {
         case "POST":

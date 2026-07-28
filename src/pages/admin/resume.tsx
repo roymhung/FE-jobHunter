@@ -2,7 +2,7 @@ import DataTable from "@/components/client/data-table";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { IResume } from "@/types/backend";
 import { ActionType, ProColumns, ProFormSelect } from '@ant-design/pro-components';
-import { Space, message, notification } from "antd";
+import { Space, message, notification, Tag } from "antd";
 import { useState, useRef } from 'react';
 import dayjs from 'dayjs';
 import { callDeleteResume } from "@/config/api";
@@ -12,7 +12,15 @@ import ViewDetailResume from "@/components/admin/resume/view.resume";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
 import { sfIn } from "spring-filter-query-builder";
+import { getResumeStatusTag, RESUME_STATUS_META, ResumeStatus } from "@/config/utils";
 import { EditOutlined } from "@ant-design/icons";
+
+const resumeStatusValueEnum = Object.fromEntries(
+    (Object.keys(RESUME_STATUS_META) as ResumeStatus[]).map(key => [
+        key,
+        RESUME_STATUS_META[key].label,
+    ])
+) as Record<string, string>;
 
 const ResumePage = () => {
     const tableRef = useRef<ActionType>();
@@ -65,20 +73,26 @@ const ResumePage = () => {
             title: 'Trạng Thái',
             dataIndex: 'status',
             sorter: true,
-            renderFormItem: (item, props, form) => (
+            render: (_, record) => {
+                const meta = getResumeStatusTag(record.status);
+                return <Tag color={meta.color}>{meta.label}</Tag>;
+            },
+            renderFormItem: () => (
                 <ProFormSelect
                     showSearch
                     mode="multiple"
                     allowClear
-                    valueEnum={{
-                        PENDING: 'PENDING',
-                        REVIEWING: 'REVIEWING',
-                        APPROVED: 'APPROVED',
-                        REJECTED: 'REJECTED',
-                    }}
-                    placeholder="Chọn level"
+                    valueEnum={resumeStatusValueEnum}
+                    placeholder="Chọn trạng thái (vd: Chờ duyệt = PENDING)"
                 />
             ),
+        },
+        {
+            title: 'Email',
+            dataIndex: 'email',
+            width: 220,
+            ellipsis: true,
+            hideInSearch: true,
         },
 
         {
@@ -187,7 +201,7 @@ const ResumePage = () => {
         }
 
         //mặc định sort theo updatedAt
-        if (Object.keys(sortBy).length === 0) {
+        if (!sortBy) {
             temp = `${temp}&sort=updatedAt,desc`;
         } else {
             temp = `${temp}&${sortBy}`;
@@ -211,7 +225,17 @@ const ResumePage = () => {
                     dataSource={resumes}
                     request={async (params, sort, filter): Promise<any> => {
                         const query = buildQuery(params, sort, filter);
-                        dispatch(fetchResume({ query }))
+                        try {
+                            const res = await dispatch(fetchResume({ query })).unwrap();
+                            const page = res?.data;
+                            return {
+                                data: page?.result ?? [],
+                                success: true,
+                                total: page?.meta?.total ?? 0,
+                            };
+                        } catch {
+                            return { data: [], success: false, total: 0 };
+                        }
                     }}
                     scroll={{ x: true }}
                     pagination={

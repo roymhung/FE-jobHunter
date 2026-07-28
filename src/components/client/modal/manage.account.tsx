@@ -1,13 +1,15 @@
-import { Button, Col, Form, Input, Modal, Row, Select, Table, Tabs, Tag, message, notification } from "antd";
+import { Button, Col, Form, Input, Modal, Row, Select, Space, Table, Tabs, Tag, message, notification } from "antd";
 import { isMobile } from "react-device-detect";
 import type { TabsProps } from 'antd';
 import { IResume, ISubscribers, IUser } from "@/types/backend";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { callCreateSubscriber, callFetchAllSkill, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber, callUpdateAccount, callChangePassword, callFetchAccount, callSendJobEmail } from "@/config/api";
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setUserLoginInfo } from "@/redux/slice/accountSlide";
+import { getResumeStatusTag, RESUME_STATUS_META, ResumeStatus } from "@/config/utils";
+import { ReloadOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 
@@ -16,21 +18,36 @@ interface IProps {
     onClose: (v: boolean) => void;
 }
 
-const UserResume = (props: any) => {
+const UserResume = ({ active }: { active?: boolean }) => {
     const [listCV, setListCV] = useState<IResume[]>([]);
     const [isFetching, setIsFetching] = useState<boolean>(false);
+    const [statusFilter, setStatusFilter] = useState<'ALL' | ResumeStatus>('ALL');
+
+    const fetchList = useCallback(async () => {
+        setIsFetching(true);
+        const res = await callFetchResumeByUser();
+        if (res?.data?.result) {
+            setListCV(res.data.result as IResume[]);
+        }
+        setIsFetching(false);
+    }, []);
 
     useEffect(() => {
-        const init = async () => {
-            setIsFetching(true);
-            const res = await callFetchResumeByUser();
-            if (res && res.data) {
-                setListCV(res.data.result as IResume[])
-            }
-            setIsFetching(false);
-        }
-        init();
-    }, [])
+        fetchList();
+    }, [fetchList]);
+
+    useEffect(() => {
+        if (active === false) return;
+        const timer = window.setInterval(() => {
+            fetchList();
+        }, 20000);
+        return () => window.clearInterval(timer);
+    }, [active, fetchList]);
+
+    const filteredList =
+        statusFilter === 'ALL'
+            ? listCV
+            : listCV.filter(item => item.status === statusFilter);
 
     const columns: ColumnsType<IResume> = [
         {
@@ -38,61 +55,86 @@ const UserResume = (props: any) => {
             key: 'index',
             width: 50,
             align: "center",
-            render: (text, record, index) => {
-                return (
-                    <>
-                        {(index + 1)}
-                    </>)
-            }
+            render: (_text, _record, index) => index + 1,
         },
         {
-            title: 'Công Ty',
+            title: 'Công ty',
             dataIndex: "companyName",
-
         },
         {
-            title: 'Job title',
+            title: 'Job',
             dataIndex: ["job", "name"],
-
         },
         {
             title: 'Trạng thái',
             dataIndex: "status",
+            render: (status: string) => {
+                const meta = getResumeStatusTag(status);
+                return <Tag color={meta.color}>{meta.label}</Tag>;
+            },
         },
         {
-            title: 'Ngày rải CV',
+            title: 'Ngày nộp CV',
             dataIndex: "createdAt",
-            render(value, record, index) {
-                return (
-                    <>{dayjs(record.createdAt).format('DD-MM-YYYY HH:mm:ss')}</>
-                )
-            },
+            render: (_value, record) =>
+                dayjs(record.createdAt).format('DD-MM-YYYY HH:mm'),
         },
         {
-            title: '',
-            dataIndex: "",
-            render(value, record, index) {
-                return (
-                    <a
-                        href={`${import.meta.env.VITE_BACKEND_URL}/storage/resume/${record?.url}`}
-                        target="_blank"
-                    >Chi tiết</a>
-                )
-            },
+            title: 'Cập nhật',
+            dataIndex: "updatedAt",
+            render: (_value, record) =>
+                record.updatedAt
+                    ? dayjs(record.updatedAt).format('DD-MM-YYYY HH:mm')
+                    : '—',
+        },
+        {
+            title: 'CV',
+            key: 'cv',
+            render: (_value, record) => (
+                <a
+                    href={`${import.meta.env.VITE_BACKEND_URL}/storage/resume/${record?.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    Tải PDF
+                </a>
+            ),
         },
     ];
 
     return (
         <div>
+            <Space wrap style={{ marginBottom: 16 }} align="center">
+                <span>Lọc trạng thái:</span>
+                <Select
+                    style={{ minWidth: 180 }}
+                    value={statusFilter}
+                    onChange={(v) => setStatusFilter(v)}
+                    options={[
+                        { value: 'ALL', label: 'Tất cả' },
+                        ...(Object.keys(RESUME_STATUS_META) as ResumeStatus[]).map(key => ({
+                            value: key,
+                            label: RESUME_STATUS_META[key].label,
+                        })),
+                    ]}
+                />
+                <Button icon={<ReloadOutlined />} onClick={fetchList} loading={isFetching}>
+                    Làm mới
+                </Button>
+                <span style={{ color: '#888', fontSize: 13 }}>
+                    Tự cập nhật mỗi 20s khi tab này đang mở
+                </span>
+            </Space>
             <Table<IResume>
+                rowKey="id"
                 columns={columns}
-                dataSource={listCV}
+                dataSource={filteredList}
                 loading={isFetching}
-                pagination={false}
+                pagination={{ pageSize: 5, showSizeChanger: false }}
             />
         </div>
-    )
-}
+    );
+};
 
 const UserUpdateInfo = () => {
     const [form] = Form.useForm();
@@ -451,16 +493,13 @@ const JobByEmail = () => {
 
 const ManageAccount = (props: IProps) => {
     const { open, onClose } = props;
-
-    const onChange = (key: string) => {
-        // console.log(key);
-    };
+    const [activeTab, setActiveTab] = useState('user-resume');
 
     const items: TabsProps['items'] = [
         {
             key: 'user-resume',
             label: `Rải CV`,
-            children: <UserResume />,
+            children: <UserResume active={open && activeTab === 'user-resume'} />,
         },
         {
             key: 'email-by-skills',
@@ -494,9 +533,9 @@ const ManageAccount = (props: IProps) => {
 
                 <div style={{ minHeight: 400 }}>
                     <Tabs
-                        defaultActiveKey="user-resume"
+                        activeKey={activeTab}
+                        onChange={setActiveTab}
                         items={items}
-                        onChange={onChange}
                     />
                 </div>
 

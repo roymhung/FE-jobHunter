@@ -47,8 +47,12 @@ const ModalUser = (props: IProps) => {
             }
             form.setFieldsValue({
                 ...dataInit,
-                role: { label: dataInit.role?.name, value: dataInit.role?.id },
-                company: { label: dataInit.company?.name, value: dataInit.company?.id },
+                role: dataInit.role?.id
+                    ? { label: dataInit.role?.name, value: dataInit.role?.id }
+                    : undefined,
+                company: dataInit.company?.id
+                    ? { label: dataInit.company?.name, value: dataInit.company?.id }
+                    : undefined,
             })
 
         }
@@ -56,8 +60,28 @@ const ModalUser = (props: IProps) => {
 
     const submitUser = async (valuesForm: any) => {
         const { name, email, password, address, age, gender, role, company } = valuesForm;
+
+        const roleId = role?.value ?? role?.id;
+        if (roleId == null || roleId === '') {
+            message.error('Vui lòng chọn vai trò');
+            return;
+        }
+
+        const companyId = company?.value ?? company?.id;
+        const roleName = (role?.label ?? role?.name ?? '') as string;
+        const needsCompany = roleName === 'HR';
+        if (needsCompany && (companyId == null || companyId === '')) {
+            message.error('HR phải gắn với một công ty');
+            return;
+        }
+
+        const payloadCompany = companyId != null && companyId !== ''
+            ? { id: Number(companyId), name: company?.label ?? company?.name ?? '' }
+            : null;
+
+        const payloadRole = { id: Number(roleId), name: '' as string };
+
         if (dataInit?.id) {
-            //update
             const user = {
                 id: dataInit.id,
                 name,
@@ -66,11 +90,8 @@ const ModalUser = (props: IProps) => {
                 age,
                 gender,
                 address,
-                role: { id: role.value, name: "" },
-                company: {
-                    id: company.value,
-                    name: company.label
-                }
+                role: payloadRole,
+                ...(payloadCompany ? { company: payloadCompany } : {}),
             }
 
             const res = await callUpdateUser(user);
@@ -85,7 +106,6 @@ const ModalUser = (props: IProps) => {
                 });
             }
         } else {
-            //create
             const user = {
                 name,
                 email,
@@ -93,11 +113,8 @@ const ModalUser = (props: IProps) => {
                 age,
                 gender,
                 address,
-                role: { id: role.value, name: "" },
-                company: {
-                    id: company.value,
-                    name: company.label
-                }
+                role: payloadRole,
+                ...(payloadCompany ? { company: payloadCompany } : {}),
             }
             const res = await callCreateUser(user);
             if (res.data) {
@@ -123,7 +140,10 @@ const ModalUser = (props: IProps) => {
 
     // Usage of DebounceSelect
     async function fetchCompanyList(name: string): Promise<ICompanySelect[]> {
-        const res = await callFetchCompany(`page=1&size=100&name=/${name}/i`);
+        const q = name?.trim()
+            ? `page=1&size=100&name=/${encodeURIComponent(name)}/i`
+            : `page=1&size=100`;
+        const res = await callFetchCompany(q);
         if (res && res.data) {
             const list = res.data.result;
             const temp = list.map(item => {
@@ -137,7 +157,10 @@ const ModalUser = (props: IProps) => {
     }
 
     async function fetchRoleList(name: string): Promise<ICompanySelect[]> {
-        const res = await callFetchRole(`page=1&size=100&name=/${name}/i`);
+        const q = name?.trim()
+            ? `page=1&size=100&name=/${encodeURIComponent(name)}/i`
+            : `page=1&size=100`;
+        const res = await callFetchRole(q);
         if (res && res.data) {
             const list = res.data.result;
             const temp = list.map(item => {
@@ -254,7 +277,15 @@ const ModalUser = (props: IProps) => {
                         <ProForm.Item
                             name="company"
                             label="Thuộc Công Ty"
-                            rules={[{ required: true, message: 'Vui lòng chọn company!' }]}
+                            rules={[{
+                                validator: async (_, value) => {
+                                    const roleVal = form.getFieldValue('role');
+                                    const roleLabel = roleVal?.label ?? roleVal?.name;
+                                    if (roleLabel === 'HR' && !value?.value && !value?.id) {
+                                        throw new Error('HR phải chọn công ty');
+                                    }
+                                },
+                            }]}
                         >
                             <DebounceSelect
                                 allowClear

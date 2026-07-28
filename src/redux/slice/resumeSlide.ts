@@ -23,7 +23,7 @@ export const fetchResume = createAsyncThunk(
 
 
 const initialState: IState = {
-    isFetching: true,
+    isFetching: false,
     meta: {
         page: 1,
         pageSize: 10,
@@ -61,14 +61,11 @@ export const resumeSlide = createSlice({
         })
 
         builder.addCase(fetchResume.fulfilled, (state, action) => {
-            if (action.payload && action.payload.data) {
-                state.isFetching = false;
+            state.isFetching = false;
+            if (action.payload?.data) {
                 state.meta = action.payload.data.meta;
-                state.result = action.payload.data.result;
+                state.result = action.payload.data.result ?? [];
             }
-            // Add user to the state array
-
-            // state.courseOrder = action.payload;
         })
     },
 

@@ -30,7 +30,7 @@ const LayoutAdmin = () => {
     const [activeMenu, setActiveMenu] = useState('');
     const user = useAppSelector(state => state.account.user);
 
-    const permissions = useAppSelector(state => state.account.user.role.permissions);
+    const permissions = useAppSelector(state => state.account.user?.role?.permissions);
     const [menuItems, setMenuItems] = useState<MenuProps['items']>([]);
 
     const navigate = useNavigate();

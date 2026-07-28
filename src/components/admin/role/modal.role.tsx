@@ -34,7 +34,7 @@ const ModalRole = (props: IProps) => {
         if (permissions) {
             for (const key in permissions) {
                 if (key.match(/^[1-9][0-9]*$/) && permissions[key] === true) {
-                    checkedPermissions.push({ id: key });
+                    checkedPermissions.push({ id: Number(key) });
                 }
             }
         }

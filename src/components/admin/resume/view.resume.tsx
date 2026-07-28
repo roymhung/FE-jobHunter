@@ -1,6 +1,7 @@
 import { callUpdateResumeStatus } from "@/config/api";
 import { IResume } from "@/types/backend";
-import { Badge, Button, Descriptions, Drawer, Form, Select, message, notification } from "antd";
+import { getResumeStatusTag, RESUME_STATUS_META, ResumeStatus } from "@/config/utils";
+import { Button, Descriptions, Drawer, Form, Select, Tag, message, notification } from "antd";
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 const { Option } = Select;
@@ -23,7 +24,7 @@ const ViewDetailResume = (props: IProps) => {
         const status = form.getFieldValue('status');
         const res = await callUpdateResumeStatus(dataInit?.id, status)
         if (res.data) {
-            message.success("Update Resume status thành công!");
+            message.success("Cập nhật trạng thái CV thành công!");
             setDataInit(null);
             onClose(false);
             reloadTable();
@@ -57,33 +58,32 @@ const ViewDetailResume = (props: IProps) => {
                 extra={
 
                     <Button loading={isSubmit} type="primary" onClick={handleChangeStatus}>
-                        Change Status
+                        Lưu trạng thái
                     </Button>
 
                 }
             >
                 <Descriptions title="" bordered column={2} layout="vertical">
                     <Descriptions.Item label="Email">{dataInit?.email}</Descriptions.Item>
-                    <Descriptions.Item label="Trạng thái">
-                        <Form
-                            form={form}
-                        >
-                            <Form.Item name={"status"}>
-                                <Select
-                                    // placeholder="Select a option and change input text above"
-                                    // onChange={onGenderChange}
-                                    // allowClear
-                                    style={{ width: "100%" }}
-                                    defaultValue={dataInit?.status}
-                                >
-                                    <Option value="PENDING">PENDING</Option>
-                                    <Option value="REVIEWING">REVIEWING</Option>
-                                    <Option value="APPROVED">APPROVED</Option>
-                                    <Option value="REJECTED">REJECTED</Option>
+                    <Descriptions.Item label="Trạng thái hiện tại">
+                        {dataInit?.status && (
+                            <Tag color={getResumeStatusTag(dataInit.status).color}>
+                                {getResumeStatusTag(dataInit.status).label}
+                            </Tag>
+                        )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Đổi trạng thái">
+                        <Form form={form}>
+                            <Form.Item name="status">
+                                <Select style={{ width: "100%" }}>
+                                    {(Object.keys(RESUME_STATUS_META) as ResumeStatus[]).map(key => (
+                                        <Option key={key} value={key}>
+                                            {RESUME_STATUS_META[key].label}
+                                        </Option>
+                                    ))}
                                 </Select>
                             </Form.Item>
                         </Form>
-
                     </Descriptions.Item>
                     <Descriptions.Item label="Tên Job">
                         {dataInit?.job?.name}
