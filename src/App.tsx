@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import NotFound from 'components/share/not.found';
 import Loading from 'components/share/loading';
 import LoginPage from 'pages/auth/login';
+import OAuthCallbackPage from 'pages/auth/oauth.callback';
 import RegisterPage from 'pages/auth/register';
 import LayoutAdmin from 'components/admin/layout.admin';
 import ProtectedRoute from 'components/share/protected-route.ts';
@@ -150,6 +151,11 @@ export default function App() {
     {
       path: "/login",
       element: <LoginPage />,
+    },
+
+    {
+      path: "/login/oauth/callback",
+      element: <OAuthCallbackPage />,
     },
 
     {

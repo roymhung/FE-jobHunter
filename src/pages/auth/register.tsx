@@ -1,11 +1,9 @@
-import { Button, Divider, Form, Input, Row, Select, message, notification } from 'antd';
+import { Button, Form, Input, Select, message, notification } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { callRegister } from 'config/api';
 import styles from 'styles/auth.module.scss';
 import { IUser } from '@/types/backend';
-const { Option } = Select;
-
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -16,120 +14,115 @@ const RegisterPage = () => {
         setIsSubmit(true);
         const res = await callRegister(name, email, password as string, +age, gender, address);
         setIsSubmit(false);
+
         if (res?.data?.id) {
-            message.success('Đăng ký tài khoản thành công!');
-            navigate('/login')
-        } else {
-            notification.error({
-                message: "Có lỗi xảy ra",
-                description:
-                    res.message && Array.isArray(res.message) ? res.message[0] : res.message,
-                duration: 5
-            })
+            message.success('Đăng ký thành công! Vui lòng đăng nhập.');
+            navigate('/login');
+            return;
         }
+        notification.error({
+            message: 'Đăng ký thất bại',
+            description:
+                res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+        });
     };
 
-
     return (
-        <div className={styles["register-page"]} >
+        <div className={styles['login-page']}>
+            <div className={`${styles['login-shell']} ${styles['login-shell--wide']}`}>
+              
+                <div className={styles['login-card']}>
+                    <header className={styles['login-header']}>
+                        <h1 className={styles['login-title']}>Đăng ký tài khoản</h1>
+                        <p className={styles['login-desc']}>Điền thông tin để bắt đầu tìm việc và ứng tuyển</p>
+                    </header>
 
-            <main className={styles.main} >
-                <div className={styles.container} >
-                    <section className={styles.wrapper} >
-                        <div className={styles.heading} >
-                            <h2 className={`${styles.text} ${styles["text-large"]}`}> Đăng Ký Tài Khoản </h2>
-                            < Divider />
-                        </div>
-                        < Form<IUser>
-                            name="basic"
-                            // style={{ maxWidth: 600, margin: '0 auto' }}
-                            onFinish={onFinish}
-                            autoComplete="off"
+                    <Form<IUser>
+                        layout="vertical"
+                        requiredMark={false}
+                        onFinish={onFinish}
+                        autoComplete="off"
+                        className={styles['login-form']}
+                    >
+                        <Form.Item
+                            label="Họ và tên"
+                            name="name"
+                            rules={[{ required: true, message: 'Nhập họ tên' }]}
                         >
-                            <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                label="Họ tên"
-                                name="name"
-                                rules={[{ required: true, message: 'Họ tên không được để trống!' }]}
-                            >
-                                <Input />
-                            </Form.Item>
+                            <Input size="large" placeholder="Nguyễn Văn A" />
+                        </Form.Item>
 
+                        <Form.Item
+                            label="Email"
+                            name="email"
+                            rules={[
+                                { required: true, message: 'Nhập email' },
+                                { type: 'email', message: 'Email không hợp lệ' },
+                            ]}
+                        >
+                            <Input size="large" placeholder="name@email.com" />
+                        </Form.Item>
 
-                            <Form.Item
-                                labelCol={{ span: 24 }
-                                } //whole column
-                                label="Email"
-                                name="email"
-                                rules={[{ required: true, message: 'Email không được để trống!' }]}
-                            >
-                                <Input type='email' />
-                            </Form.Item>
+                        <Form.Item
+                            label="Mật khẩu"
+                            name="password"
+                            rules={[
+                                { required: true, message: 'Nhập mật khẩu' },
+                                { min: 6, message: 'Ít nhất 6 ký tự' },
+                            ]}
+                        >
+                            <Input.Password size="large" placeholder="Tối thiểu 6 ký tự" />
+                        </Form.Item>
 
+                        <div className={styles['login-form-row']}>
                             <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                label="Mật khẩu"
-                                name="password"
-                                rules={[{ required: true, message: 'Mật khẩu không được để trống!' }]}
-                            >
-                                <Input.Password />
-                            </Form.Item>
-                            <Form.Item
-                                labelCol={{ span: 24 }} //whole column
                                 label="Tuổi"
                                 name="age"
-                                rules={[{ required: true, message: 'Tuổi không được để trống!' }]}
+                                rules={[{ required: true, message: 'Nhập tuổi' }]}
                             >
-                                <Input type='number' />
+                                <Input size="large" type="number" min={16} max={80} placeholder="22" />
                             </Form.Item>
 
-
                             <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                name="gender"
                                 label="Giới tính"
-                                rules={[{ required: true, message: 'Giới tính không được để trống!' }]}
+                                name="gender"
+                                rules={[{ required: true, message: 'Chọn giới tính' }]}
                             >
-                                <Select
-                                    // placeholder="Select a option and change input text above"
-                                    // onChange={onGenderChange}
-                                    allowClear
-                                >
-                                    <Option value="MALE">Nam</Option>
-                                    <Option value="FEMALE">Nữ</Option>
-                                    <Option value="OTHER">Khác</Option>
+                                <Select size="large" placeholder="Chọn" allowClear>
+                                    <Select.Option value="MALE">Nam</Select.Option>
+                                    <Select.Option value="FEMALE">Nữ</Select.Option>
+                                    <Select.Option value="OTHER">Khác</Select.Option>
                                 </Select>
                             </Form.Item>
+                        </div>
 
+                        <Form.Item
+                            label="Địa chỉ"
+                            name="address"
+                            rules={[{ required: true, message: 'Nhập địa chỉ' }]}
+                        >
+                            <Input size="large" placeholder="Quận, thành phố..." />
+                        </Form.Item>
 
-                            <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                label="Địa chỉ"
-                                name="address"
-                                rules={[{ required: true, message: 'Địa chỉ không được để trống!' }]}
-                            >
-                                <Input />
-                            </Form.Item>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={isSubmit}
+                            block
+                            size="large"
+                            className={styles['login-submit']}
+                        >
+                            Tạo tài khoản
+                        </Button>
+                    </Form>
 
-                            < Form.Item
-                            // wrapperCol={{ offset: 6, span: 16 }}
-                            >
-                                <Button type="primary" htmlType="submit" loading={isSubmit} >
-                                    Đăng ký
-                                </Button>
-                            </Form.Item>
-                            <Divider> Or </Divider>
-                            <p className="text text-normal" > Đã có tài khoản ?
-                                <span>
-                                    <Link to='/login' > Đăng Nhập </Link>
-                                </span>
-                            </p>
-                        </Form>
-                    </section>
+                    <p className={styles['login-footer']}>
+                        Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+                    </p>
                 </div>
-            </main>
+            </div>
         </div>
-    )
-}
+    );
+};
 
 export default RegisterPage;
