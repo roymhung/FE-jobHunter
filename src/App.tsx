@@ -41,6 +41,7 @@ import InterviewExamPage from './pages/interview/exam';
 import InterviewResultPage from './pages/interview/result';
 import InterviewRequireAuth from './components/client/interview/require-auth';
 import AdminInterviewOrdersPage from './pages/admin/interview-orders';
+import AdminInterviewQuestionsPage from './pages/admin/interview-questions';
 
 const LayoutClient = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -202,6 +203,13 @@ export default function App() {
           element:
             <ProtectedRoute>
               <AdminInterviewOrdersPage />
+            </ProtectedRoute>
+        },
+        {
+          path: "interview-questions",
+          element:
+            <ProtectedRoute>
+              <AdminInterviewQuestionsPage />
             </ProtectedRoute>
         }
       ],

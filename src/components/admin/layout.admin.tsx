@@ -11,6 +11,7 @@ import {
     BugOutlined,
     ScheduleOutlined,
     ThunderboltOutlined,
+    QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { Layout, Menu, Dropdown, Space, message, Avatar, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -115,6 +116,11 @@ const LayoutAdmin = () => {
                     label: <Link to='/admin/interview-orders'>Interview Pro</Link>,
                     key: '/admin/interview-orders',
                     icon: <ThunderboltOutlined />
+                }] : []),
+                ...(isSuperAdmin || ACL_ENABLE === 'false' ? [{
+                    label: <Link to='/admin/interview-questions'>Câu hỏi phỏng vấn</Link>,
+                    key: '/admin/interview-questions',
+                    icon: <QuestionCircleOutlined />
                 }] : []),
 
 

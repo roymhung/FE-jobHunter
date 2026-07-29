@@ -52,6 +52,18 @@ export interface IInterviewOrder {
   userEmail?: string;
 }
 
+export interface IInterviewQuestionAdmin {
+  id: number;
+  topicCode: string;
+  questionType: string;
+  level: string;
+  content: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string | null;
+  active?: boolean;
+}
+
 export interface IInterviewQuestionApi {
   orderIndex: number;
   questionId: number;

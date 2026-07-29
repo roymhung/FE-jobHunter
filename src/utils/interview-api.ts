@@ -1,9 +1,10 @@
 import axios from 'config/axios-customize';
-import { IBackendRes } from '@/types/backend';
+import { IBackendRes, IModelPaginate } from '@/types/backend';
 import type {
   IInterviewConfig,
   IInterviewMe,
   IInterviewOrder,
+  IInterviewQuestionAdmin,
   IInterviewSessionApi,
   IInterviewTopic,
 } from '@/types/interview';
@@ -63,6 +64,43 @@ export const callInterviewActivateOrder = (orderId: number) => {
   return axios.post<IBackendRes<IInterviewOrder>>(
     `/api/v1/interview/subscriptions/orders/${orderId}/activate`,
   );
+};
+
+export type InterviewQuestionUpsertBody = {
+  topicCode: string;
+  questionType: string;
+  level: string;
+  content: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
+  active?: boolean;
+};
+
+export const callInterviewAdminListQuestions = (params: {
+  topicCode?: string;
+  page?: number;
+  size?: number;
+}) => {
+  const q = new URLSearchParams();
+  if (params.topicCode) q.set('topicCode', params.topicCode);
+  q.set('page', String(params.page ?? 0));
+  q.set('size', String(params.size ?? 10));
+  return axios.get<IBackendRes<IModelPaginate<IInterviewQuestionAdmin>>>(
+    `/api/v1/interview/admin/questions?${q.toString()}`,
+  );
+};
+
+export const callInterviewAdminCreateQuestion = (body: InterviewQuestionUpsertBody) => {
+  return axios.post<IBackendRes<IInterviewQuestionAdmin>>('/api/v1/interview/admin/questions', body);
+};
+
+export const callInterviewAdminUpdateQuestion = (id: number, body: InterviewQuestionUpsertBody) => {
+  return axios.put<IBackendRes<IInterviewQuestionAdmin>>(`/api/v1/interview/admin/questions/${id}`, body);
+};
+
+export const callInterviewAdminDeleteQuestion = (id: number) => {
+  return axios.delete<IBackendRes<unknown>>(`/api/v1/interview/admin/questions/${id}`);
 };
 
 export function formatVnd(amount: number) {
