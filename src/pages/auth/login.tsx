@@ -122,6 +122,10 @@ const LoginPage = () => {
                             <Input.Password size="large" placeholder="Mật khẩu của bạn" />
                         </Form.Item>
 
+                        <div style={{ textAlign: 'right', marginBottom: 8 }}>
+                            <Link to="/forgot-password">Quên mật khẩu?</Link>
+                        </div>
+
                         <Button type="primary" htmlType="submit" loading={isSubmit} block size="large" className={styles['login-submit']}>
                             Đăng nhập
                         </Button>

@@ -41,6 +41,25 @@ export const callLogout = () => {
     return axios.post<IBackendRes<string>>('/api/v1/auth/logout')
 }
 
+export const callForgotPassword = (email: string) => {
+    return axios.post<IBackendRes<{ message: string }>>('/api/v1/auth/forgot-password', { email })
+}
+
+export interface IResetTokenValidate {
+    valid: boolean;
+    message?: string;
+}
+
+export const callValidateResetToken = (token: string) => {
+    return axios.get<IResetTokenValidate>('/api/v1/auth/reset-password/validate', {
+        params: { token },
+    })
+}
+
+export const callResetPassword = (token: string, newPassword: string) => {
+    return axios.post<IBackendRes<{ message: string }>>('/api/v1/auth/reset-password', { token, newPassword })
+}
+
 export const callUpdateAccount = (user: Pick<IUser, 'name' | 'age' | 'gender' | 'address'>) => {
     return axios.put<IBackendRes<IUser>>('/api/v1/auth/account', { ...user })
 }

@@ -9,6 +9,8 @@ import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import NotFound from 'components/share/not.found';
 import Loading from 'components/share/loading';
 import LoginPage from 'pages/auth/login';
+import ForgotPasswordPage from 'pages/auth/forgot.password';
+import ResetPasswordPage from 'pages/auth/reset.password';
 import OAuthCallbackPage from 'pages/auth/oauth.callback';
 import RegisterPage from 'pages/auth/register';
 import LayoutAdmin from 'components/admin/layout.admin';
@@ -64,6 +66,8 @@ export default function App() {
     if (
       window.location.pathname === '/login'
       || window.location.pathname === '/register'
+      || window.location.pathname === '/forgot-password'
+      || window.location.pathname === '/reset-password'
     )
       return;
     dispatch(fetchAccount())
@@ -161,6 +165,16 @@ export default function App() {
     {
       path: "/register",
       element: <RegisterPage />,
+    },
+
+    {
+      path: "/forgot-password",
+      element: <ForgotPasswordPage />,
+    },
+
+    {
+      path: "/reset-password",
+      element: <ResetPasswordPage />,
     },
   ]);
 
