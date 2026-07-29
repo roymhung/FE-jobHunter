@@ -33,6 +33,13 @@ import ClientJobDetailPage from './pages/job/detail';
 import ClientCompanyPage from './pages/company';
 import ClientCompanyDetailPage from './pages/company/detail';
 import JobTabs from './pages/admin/job/job.tabs';
+import InterviewLandingPage from './pages/interview/landing';
+import InterviewPracticePage from './pages/interview/practice';
+import InterviewSetupPage from './pages/interview/setup';
+import InterviewReadyPage from './pages/interview/ready';
+import InterviewExamPage from './pages/interview/exam';
+import InterviewResultPage from './pages/interview/result';
+import InterviewRequireAuth from './components/client/interview/require-auth';
 
 const LayoutClient = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,7 +90,48 @@ export default function App() {
         { path: "job", element: <ClientJobPage /> },
         { path: "job/:id", element: <ClientJobDetailPage /> },
         { path: "company", element: <ClientCompanyPage /> },
-        { path: "company/:id", element: <ClientCompanyDetailPage /> }
+        { path: "company/:id", element: <ClientCompanyDetailPage /> },
+        { path: "interview", element: <InterviewLandingPage /> },
+        {
+          path: "interview/setup",
+          element: (
+            <InterviewRequireAuth>
+              <InterviewSetupPage />
+            </InterviewRequireAuth>
+          ),
+        },
+        {
+          path: "interview/practice",
+          element: (
+            <InterviewRequireAuth>
+              <InterviewPracticePage />
+            </InterviewRequireAuth>
+          ),
+        },
+        {
+          path: "interview/ready",
+          element: (
+            <InterviewRequireAuth>
+              <InterviewReadyPage />
+            </InterviewRequireAuth>
+          ),
+        },
+        {
+          path: "interview/exam",
+          element: (
+            <InterviewRequireAuth>
+              <InterviewExamPage />
+            </InterviewRequireAuth>
+          ),
+        },
+        {
+          path: "interview/result",
+          element: (
+            <InterviewRequireAuth>
+              <InterviewResultPage />
+            </InterviewRequireAuth>
+          ),
+        },
       ],
     },
 

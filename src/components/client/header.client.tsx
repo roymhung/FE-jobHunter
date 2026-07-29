@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CodeOutlined, ContactsOutlined, FireOutlined, LogoutOutlined, MenuFoldOutlined, RiseOutlined, TwitterOutlined } from '@ant-design/icons';
+import { CodeOutlined, ContactsOutlined, FireOutlined, LogoutOutlined, MenuFoldOutlined, RiseOutlined, TwitterOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { Avatar, Drawer, Dropdown, MenuProps, Space, message } from 'antd';
 import { Menu, ConfigProvider } from 'antd';
 import styles from '@/styles/client.module.scss';
@@ -44,8 +44,10 @@ const Header = (props: any) => {
             label: <Link to={'/company'}>Top Công ty IT</Link>,
             key: '/company',
             icon: <RiseOutlined />,
-        }
+        },
     ];
+
+    const interviewActive = location.pathname.startsWith('/interview');
 
 
 
@@ -89,7 +91,15 @@ const Header = (props: any) => {
         },
     ];
 
-    const itemsMobiles = [...items, ...itemsDropdown];
+    const itemsMobiles = [
+        ...items,
+        {
+            label: <Link to={'/interview'}>Luyện phỏng vấn</Link>,
+            key: '/interview',
+            icon: <ThunderboltOutlined />,
+        },
+        ...itemsDropdown,
+    ];
 
     return (
         <>
@@ -101,23 +111,31 @@ const Header = (props: any) => {
                                 <FaReact onClick={() => navigate('/')} title='Hỏi Dân IT' />
                             </div>
                             <div className={styles['top-menu']}>
-                                <ConfigProvider
-                                    theme={{
-                                        token: {
-                                            colorPrimary: '#fff',
-                                            colorBgContainer: '#222831',
-                                            colorText: '#a7a7a7',
-                                        },
-                                    }}
-                                >
-
-                                    <Menu
-                                        // onClick={onClick}
-                                        selectedKeys={[current]}
-                                        mode="horizontal"
-                                        items={items}
-                                    />
-                                </ConfigProvider>
+                                <div className={styles['navCluster']}>
+                                    <ConfigProvider
+                                        theme={{
+                                            token: {
+                                                colorPrimary: '#fff',
+                                                colorBgContainer: '#222831',
+                                                colorText: '#a7a7a7',
+                                            },
+                                        }}
+                                    >
+                                        <Menu
+                                            selectedKeys={interviewActive ? [] : [current]}
+                                            mode="horizontal"
+                                            items={items}
+                                            style={{ flex: '0 1 auto', minWidth: 0, border: 'none', background: 'transparent' }}
+                                        />
+                                    </ConfigProvider>
+                                    <Link
+                                        to="/interview"
+                                        className={`${styles['navInterview']} ${interviewActive ? styles['active'] : ''}`}
+                                    >
+                                        <ThunderboltOutlined />
+                                        Luyện phỏng vấn
+                                    </Link>
+                                </div>
                                 <div className={styles['extra']}>
                                     {isAuthenticated === false ?
                                         <Link to={'/login'}>Đăng Nhập</Link>
