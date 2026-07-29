@@ -26,7 +26,7 @@ export default function InterviewReadyPage() {
   const location = useLocation();
   const email = useAppSelector((s) => s.account.user?.email);
   const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
-  const { config, loading: loadingMeta, freeLeft, freeTotal, proActive } =
+  const { config, loading: loadingMeta, freeLeft, freeTotal, proActive, refresh } =
     useInterviewProfile(isAuthenticated);
   const setup = useMemo(() => loadSetupSelection(), [location.key]);
   const [hideCorrect, setHideCorrect] = useState(false);
@@ -77,6 +77,7 @@ export default function InterviewReadyPage() {
     const session = examSessionFromApi(dto, passPercent);
     saveExamSession(session);
     setStarting(false);
+    void refresh();
     navigate('/interview/exam');
   };
 

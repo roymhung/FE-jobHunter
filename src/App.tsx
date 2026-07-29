@@ -40,6 +40,7 @@ import InterviewReadyPage from './pages/interview/ready';
 import InterviewExamPage from './pages/interview/exam';
 import InterviewResultPage from './pages/interview/result';
 import InterviewRequireAuth from './components/client/interview/require-auth';
+import InterviewRequireFreeQuota from './components/client/interview/require-free-quota';
 import AdminInterviewOrdersPage from './pages/admin/interview-orders';
 import AdminInterviewQuestionsPage from './pages/admin/interview-questions';
 
@@ -98,7 +99,9 @@ export default function App() {
           path: "interview/setup",
           element: (
             <InterviewRequireAuth>
-              <InterviewSetupPage />
+              <InterviewRequireFreeQuota>
+                <InterviewSetupPage />
+              </InterviewRequireFreeQuota>
             </InterviewRequireAuth>
           ),
         },
@@ -114,7 +117,9 @@ export default function App() {
           path: "interview/ready",
           element: (
             <InterviewRequireAuth>
-              <InterviewReadyPage />
+              <InterviewRequireFreeQuota>
+                <InterviewReadyPage />
+              </InterviewRequireFreeQuota>
             </InterviewRequireAuth>
           ),
         },

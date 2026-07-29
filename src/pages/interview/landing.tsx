@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import styles from '@/styles/interview.module.scss';
 import {
-  getFreeRemaining,
+  FREE_INTERVIEW_SESSIONS,
 } from '@/utils/interview-storage';
 import InterviewPaymentModal from '@/components/client/interview/payment-modal';
 import { useAppSelector } from '@/redux/hooks';
@@ -25,13 +25,13 @@ export default function InterviewLandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
-  const userEmail = useAppSelector((s) => s.account.user?.email);
-  const { config, freeLeft, freeTotal, canStart, refresh } = useInterviewProfile(isAuthenticated);
-  const freeSessions = config?.freeSessions ?? freeTotal;
+  const { config, freeLeft, freeTotal, canStart, refresh, me, proActive } = useInterviewProfile(isAuthenticated);
+  const freeSessions = isAuthenticated ? freeTotal : (config?.freeSessions ?? FREE_INTERVIEW_SESSIONS);
   const proQuestions = config?.proQuestionsPerSession ?? 30;
   const freeQuestions = config?.freeQuestionsPerSession ?? 10;
   const durationMin = config?.durationMinutes ?? 45;
-  const remaining = isAuthenticated ? freeLeft : getFreeRemaining(userEmail);
+  const remaining = freeLeft;
+  const sessionsUsed = me?.freeSessionsUsed;
 
   const pricingRef = useRef<HTMLElement>(null);
   const [startOpen, setStartOpen] = useState(false);
@@ -50,10 +50,16 @@ export default function InterviewLandingPage() {
     }
   }, [location.pathname, location.hash]);
 
-  const onStartPractice = () => {
+  const onStartPractice = async () => {
     if (!isAuthenticated) {
       message.info('Vui lòng đăng nhập để bắt đầu luyện phỏng vấn');
       navigate(`/login?callback=${encodeURIComponent('/interview/setup')}`);
+      return;
+    }
+    const stats = await refresh();
+    if (!stats.canStart) {
+      message.warning('Bạn đã hết 5 lượt Free. Nâng cấp Pro để tiếp tục luyện.');
+      setStartOpen(true);
       return;
     }
     setStartOpen(true);
@@ -319,23 +325,62 @@ export default function InterviewLandingPage() {
       </div>
 
       <Modal
-        title="Lượt luyện miễn phí"
+        title={canStart ? 'Lượt luyện miễn phí' : 'Đã hết lượt Free'}
         open={startOpen}
         onCancel={() => setStartOpen(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setStartOpen(false)}>Đóng</Button>,
-          <Button key="go" type="primary" className={styles.btnPrimary} onClick={confirmStart}>
-            Vào trang luyện tập
-          </Button>,
-        ]}
+        footer={
+          canStart
+            ? [
+                <Button key="cancel" onClick={() => setStartOpen(false)}>
+                  Đóng
+                </Button>,
+                <Button key="go" type="primary" className={styles.btnPrimary} onClick={confirmStart}>
+                  Vào trang luyện tập
+                </Button>,
+              ]
+            : [
+                <Button key="cancel" onClick={() => setStartOpen(false)}>
+                  Đóng
+                </Button>,
+                <Button
+                  key="pro"
+                  type="primary"
+                  className={styles.btnPrimary}
+                  onClick={() => {
+                    setStartOpen(false);
+                    openPayment('year');
+                  }}
+                >
+                  Nâng cấp Pro
+                </Button>,
+              ]
+        }
       >
-        <p>
-          Gói <strong>Free</strong> cho phép <strong>{freeSessions} lượt</strong> luyện phỏng vấn miễn phí.
-          Sau khi dùng hết, bạn cần nâng cấp Pro để tiếp tục.
-        </p>
-        <p style={{ marginTop: 12, fontSize: 16 }}>
-          Bạn còn: <strong style={{ color: '#6366f1' }}>{remaining}/{freeSessions}</strong> lượt.
-        </p>
+        {canStart ? (
+          <p>
+            Gói <strong>Free</strong> cho phép <strong>{freeSessions} lượt</strong> luyện phỏng vấn miễn phí.
+            Sau khi dùng hết, bạn cần nâng cấp Pro để tiếp tục.
+          </p>
+        ) : (
+          <p>
+            Bạn đã dùng hết <strong>{freeSessions}</strong> lượt Free. Mỗi lần &quot;Bắt đầu làm bài&quot; tính{' '}
+            <strong>1 lượt</strong>. Vui lòng nâng cấp <strong>Pro</strong> để tạo phiên luyện mới.
+          </p>
+        )}
+        {!proActive ? (
+          <p style={{ marginTop: 12, fontSize: 16 }}>
+            Bạn còn:{' '}
+            <strong style={{ color: canStart ? '#6366f1' : '#dc2626' }}>
+              {remaining}/{freeSessions}
+            </strong>{' '}
+            lượt.
+          </p>
+        ) : null}
+        {isAuthenticated && sessionsUsed != null ? (
+          <p style={{ marginTop: 8, color: '#64748b', fontSize: 14 }}>
+            Đã tạo <strong>{sessionsUsed}</strong> phiên luyện trên tài khoản (mỗi lần &quot;Bắt đầu làm bài&quot; = 1 lượt).
+          </p>
+        ) : null}
       </Modal>
 
       <InterviewPaymentModal

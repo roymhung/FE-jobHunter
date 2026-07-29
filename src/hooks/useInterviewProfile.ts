@@ -12,20 +12,31 @@ export function useInterviewProfile(isAuthenticated: boolean) {
     const cfgRes = await callInterviewConfig();
     const cfg = unwrapInterviewData(cfgRes);
     setConfig(cfg ?? null);
+    let meData: IInterviewMe | null = null;
     if (isAuthenticated) {
       const meRes = await callInterviewMe();
-      setMe(unwrapInterviewData(meRes) ?? null);
+      meData = unwrapInterviewData(meRes) ?? null;
+      setMe(meData);
     } else {
       setMe(null);
     }
     setLoading(false);
+    const proActive = meData?.proActive ?? false;
+    const freeLeft = meData?.freeSessionsLeft ?? 0;
+    return {
+      proActive,
+      freeLeft,
+      canStart: proActive || freeLeft > 0,
+    };
   }, [isAuthenticated]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const freeLeft = me?.freeSessionsLeft ?? config?.freeSessions ?? 5;
+  const freeLeft = isAuthenticated
+    ? (me?.freeSessionsLeft ?? 0)
+    : (config?.freeSessions ?? 5);
   const freeTotal = me?.freeSessionsTotal ?? config?.freeSessions ?? 5;
   const proActive = me?.proActive ?? false;
   const canStart = proActive || freeLeft > 0;

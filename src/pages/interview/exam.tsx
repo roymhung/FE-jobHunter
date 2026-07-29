@@ -47,7 +47,7 @@ export default function InterviewExamPage() {
     const s = getExamSession();
     return s ? getRemainingSec(s) : 0;
   });
-  const [submitModal, setSubmitModal] = useState<'none' | 'partial' | 'confirm'>('none');
+  const [submitModal, setSubmitModal] = useState<'none' | 'confirm'>('none');
   const autoSubmittedRef = useRef(false);
   const timerSyncedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,10 +107,6 @@ export default function InterviewExamPage() {
 
   const onSubmitClick = () => {
     if (!session) return;
-    if (!allAnswered) {
-      setSubmitModal('partial');
-      return;
-    }
     setSubmitModal('confirm');
   };
 
@@ -266,24 +262,6 @@ export default function InterviewExamPage() {
       </div>
 
       <Modal
-        title="Nộp bài"
-        open={submitModal === 'partial'}
-        onCancel={() => setSubmitModal('none')}
-        footer={[
-          <Button key="continue" type="primary" onClick={() => setSubmitModal('none')}>
-            Tiếp tục làm
-          </Button>,
-        ]}
-      >
-        <p>
-          Bạn đã trả lời <strong>{answered}</strong> / {total} câu.
-        </p>
-        <p>
-          Còn <strong>{total - answered}</strong> câu chưa trả lời. Vui lòng làm đủ {total} câu trước khi nộp bài.
-        </p>
-      </Modal>
-
-      <Modal
         title="Xác nhận nộp bài"
         open={submitModal === 'confirm'}
         onCancel={() => setSubmitModal('none')}
@@ -293,8 +271,14 @@ export default function InterviewExamPage() {
         onOk={() => void finalizeSubmit()}
       >
         <p>
-          Bạn đã trả lời <strong>{total}/{total}</strong> câu.
+          Bạn đã trả lời <strong>{answered}</strong> / {total} câu.
         </p>
+        {!allAnswered ? (
+          <p>
+            Còn <strong>{total - answered}</strong> câu chưa trả lời — bạn vẫn có thể nộp; câu trống sẽ tính là
+            sai.
+          </p>
+        ) : null}
         <p>Sau khi nộp bài sẽ <strong>không được sửa</strong> nữa. Bạn có chắc muốn nộp?</p>
       </Modal>
     </div>

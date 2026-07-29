@@ -17,12 +17,13 @@ const LayoutApp = (props: IProps) => {
     //handle refresh token error
     useEffect(() => {
         if (isRefreshToken === true) {
-            localStorage.removeItem('access_token')
+            localStorage.removeItem('access_token');
             message.error(errorRefreshToken);
-            dispatch(setRefreshTokenAction({ status: false, message: "" }))
-            navigate('/login');
+            dispatch(setRefreshTokenAction({ status: false, message: "" }));
+            const callback = encodeURIComponent(window.location.pathname + window.location.search);
+            navigate(`/login?callback=${callback}`);
         }
-    }, [isRefreshToken]);
+    }, [isRefreshToken, errorRefreshToken, dispatch, navigate]);
 
     return (
         <>

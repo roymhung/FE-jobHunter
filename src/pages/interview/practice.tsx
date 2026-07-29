@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Button, Spin, Tabs, message } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -39,6 +39,10 @@ export default function InterviewPracticePage() {
   const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
   const { me, loading, freeLeft, freeTotal, proActive, canStart, config, refresh } =
     useInterviewProfile(isAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) void refresh();
+  }, [isAuthenticated, refresh]);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<'year' | 'lifetime'>('year');
 

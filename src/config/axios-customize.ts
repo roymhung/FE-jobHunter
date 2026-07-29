@@ -20,16 +20,41 @@ const instance = axiosClient.create({
 const mutex = new Mutex();
 const NO_RETRY_HEADER = 'x-no-retry';
 
+const AUTH_NO_BEARER = ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/refresh'];
+
+const shouldAttachAccessToken = (url?: string) =>
+    !!url && !AUTH_NO_BEARER.some((path) => url.includes(path));
+
 const handleRefreshToken = async (): Promise<string | null> => {
     return await mutex.runExclusive(async () => {
-        const res = await instance.get<IBackendRes<AccessTokenResponse>>('/api/v1/auth/refresh');
-        if (res && res.data) return res.data.access_token;
-        else return null;
+        const res = await instance.get<IBackendRes<AccessTokenResponse>>('/api/v1/auth/refresh', {
+            headers: {
+                [NO_RETRY_HEADER]: 'true',
+                Authorization: '',
+            },
+        });
+        const token = res?.data?.access_token;
+        return token ?? null;
     });
 };
 
+const forceReLogin = (messageText: string) => {
+    localStorage.removeItem('access_token');
+    store.dispatch(
+        setRefreshTokenAction({
+            status: true,
+            message: messageText,
+        }),
+    );
+};
+
 instance.interceptors.request.use(function (config) {
-    if (typeof window !== "undefined" && window && window.localStorage && window.localStorage.getItem('access_token')) {
+    const url = config.url ?? '';
+    if (
+        shouldAttachAccessToken(url) &&
+        typeof window !== 'undefined' &&
+        window?.localStorage?.getItem('access_token')
+    ) {
         config.headers.Authorization = 'Bearer ' + window.localStorage.getItem('access_token');
     }
     if (!config.headers.Accept && config.headers["Content-Type"]) {
@@ -52,26 +77,28 @@ instance.interceptors.response.use(
             && !error.config.headers[NO_RETRY_HEADER]
         ) {
             const access_token = await handleRefreshToken();
-            error.config.headers[NO_RETRY_HEADER] = 'true'
+            error.config.headers[NO_RETRY_HEADER] = 'true';
             if (access_token) {
                 error.config.headers['Authorization'] = `Bearer ${access_token}`;
-                localStorage.setItem('access_token', access_token)
+                localStorage.setItem('access_token', access_token);
                 return instance.request(error.config);
             }
+            forceReLogin('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
         }
 
         if (
-            error.config && error.response
-            && +error.response.status === 400
-            && error.config.url === '/api/v1/auth/refresh'
-            && location.pathname.startsWith("/admin")
+            error.config &&
+            error.response &&
+            error.config.url === '/api/v1/auth/refresh'
         ) {
-            const message = error?.response?.data?.error ?? "Có lỗi xảy ra, vui lòng login.";
-            //dispatch redux action
-            store.dispatch(setRefreshTokenAction({ status: true, message }));
+            const msg =
+                error?.response?.data?.error ??
+                error?.response?.data?.message ??
+                'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+            forceReLogin(typeof msg === 'string' ? msg : 'Vui lòng đăng nhập lại.');
         }
 
-        if (+error.response.status === 403) {
+        if (error.response && +error.response.status === 403) {
             notification.error({
                 message: error?.response?.data?.message ?? "",
                 description: error?.response?.data?.error ?? ""

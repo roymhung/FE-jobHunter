@@ -18,6 +18,7 @@ export interface IInterviewMe {
   proActive: boolean;
   freeSessionsLeft: number;
   freeSessionsTotal: number;
+  freeSessionsUsed?: number;
   recentSessions: {
     sessionId: string;
     submittedAt?: string;

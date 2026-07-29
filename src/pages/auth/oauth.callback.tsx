@@ -14,7 +14,11 @@ const OAuthCallbackPage = () => {
         const run = async () => {
             const error = params.get('error');
             if (error) {
-                notification.error({ message: 'Đăng nhập OAuth thất bại', description: error });
+                const desc =
+                    error === 'user_not_found'
+                        ? 'Backend không tìm/thêm được tài khoản sau OAuth. Thử đăng ký email trước hoặc liên hệ admin; nếu vừa cập nhật BE hãy restart server.'
+                        : error;
+                notification.error({ message: 'Đăng nhập OAuth thất bại', description: desc });
                 navigate('/login', { replace: true });
                 return;
             }
