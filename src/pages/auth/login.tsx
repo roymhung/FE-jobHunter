@@ -29,7 +29,7 @@ const LoginPage = () => {
     const [isSubmit, setIsSubmit] = useState(false);
     const dispatch = useDispatch();
     const isAuthenticated = useAppSelector(state => state.account.isAuthenticated);
-    const [oauthReady, setOauthReady] = useState({ google: false, github: false });
+    const [oauthReady, setOauthReady] = useState({ google: false, github: false, facebook: false });
 
     const location = useLocation();
     const callback = new URLSearchParams(location.search).get('callback');
@@ -44,18 +44,24 @@ const LoginPage = () => {
                 setOauthReady({
                     google: !!res.data.google,
                     github: !!res.data.github,
+                    facebook: !!res.data.facebook,
                 });
             }
         });
     }, []);
 
-    const goOAuth = (provider: 'google' | 'github') => {
-        const ready = provider === 'google' ? oauthReady.google : oauthReady.github;
+    const goOAuth = (provider: 'google' | 'github' | 'facebook') => {
+        const ready =
+            provider === 'google'
+                ? oauthReady.google
+                : provider === 'github'
+                  ? oauthReady.github
+                  : oauthReady.facebook;
         if (!ready) {
             notification.warning({
-                message: 'BE chưa có Client ID Google/GitHub',
+                message: 'BE chưa cấu hình OAuth cho provider này',
                 description:
-                    'Copy application-oauth.local.properties.example → application-oauth.local.properties, dán Client ID & Secret từ Google Console, restart Spring Boot.',
+                    'Copy application-oauth.local.properties.example → application-oauth.local.properties, dán Client ID & Secret, restart Spring Boot.',
                 duration: 8,
             });
         }
@@ -135,6 +141,9 @@ const LoginPage = () => {
                         <button type="button" className={`${styles['oauth-btn']} ${styles['oauth-btn-dark']}`} onClick={() => goOAuth('github')}>
                             <GitHubIcon />
                             GitHub
+                        </button>
+                        <button type="button" className={`${styles['oauth-btn']} ${styles['oauth-btn-fb']}`} onClick={() => goOAuth('facebook')}>
+                            Facebook
                         </button>
                     </div>
 

@@ -13,7 +13,7 @@ export const callLogin = (username: string, password: string) => {
     return axios.post<IBackendRes<IAccount>>('/api/v1/auth/login', { username, password })
 }
 
-export const getOAuthLoginUrl = (provider: 'google' | 'github') => {
+export const getOAuthLoginUrl = (provider: 'google' | 'github' | 'facebook') => {
     const base = (import.meta.env.VITE_BACKEND_URL as string).replace(/\/$/, '');
     return `${base}/oauth2/authorization/${provider}`;
 }
@@ -21,6 +21,7 @@ export const getOAuthLoginUrl = (provider: 'google' | 'github') => {
 export interface IOAuthStatus {
     google: boolean;
     github: boolean;
+    facebook: boolean;
     message?: string;
 }
 
