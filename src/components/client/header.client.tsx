@@ -49,7 +49,16 @@ const Header = (props: any) => {
 
     const interviewActive = location.pathname.startsWith('/interview');
 
+    const navItems: MenuProps['items'] = [
+        ...items,
+        {
+            label: <Link to={'/interview'}>Luyện phỏng vấn</Link>,
+            key: '/interview',
+            icon: <ThunderboltOutlined />,
+        },
+    ];
 
+    const selectedNavKey = interviewActive ? '/interview' : current;
 
     const onClick: MenuProps['onClick'] = (e) => {
         setCurrent(e.key);
@@ -122,19 +131,13 @@ const Header = (props: any) => {
                                         }}
                                     >
                                         <Menu
-                                            selectedKeys={interviewActive ? [] : [current]}
+                                            selectedKeys={[selectedNavKey]}
                                             mode="horizontal"
-                                            items={items}
-                                            style={{ flex: '0 1 auto', minWidth: 0, border: 'none', background: 'transparent' }}
+                                            items={navItems}
+                                            disabledOverflow
+                                            style={{ flex: 1, border: 'none', background: 'transparent' }}
                                         />
                                     </ConfigProvider>
-                                    <Link
-                                        to="/interview"
-                                        className={`${styles['navInterview']} ${interviewActive ? styles['active'] : ''}`}
-                                    >
-                                        <ThunderboltOutlined />
-                                        Luyện phỏng vấn
-                                    </Link>
                                 </div>
                                 <div className={styles['extra']}>
                                     {isAuthenticated === false ?
@@ -167,7 +170,7 @@ const Header = (props: any) => {
             >
                 <Menu
                     onClick={onClick}
-                    selectedKeys={[current]}
+                    selectedKeys={[selectedNavKey]}
                     mode="vertical"
                     items={itemsMobiles}
                 />

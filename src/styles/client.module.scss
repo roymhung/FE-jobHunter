@@ -107,6 +107,18 @@
             min-width: 0;
             justify-content: flex-start;
             gap: 0;
+            overflow: visible;
+
+            :global(.ant-menu-horizontal) {
+                flex: 1;
+                flex-wrap: nowrap;
+                overflow: visible !important;
+                line-height: 46px;
+            }
+
+            :global(.ant-menu-overflow-item) {
+                display: none !important;
+            }
         }
 
         .navInterview {
