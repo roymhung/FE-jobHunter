@@ -26,7 +26,7 @@ export default function InterviewLandingPage() {
   const location = useLocation();
   const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
   const userEmail = useAppSelector((s) => s.account.user?.email);
-  const { config, freeLeft, freeTotal, canStart } = useInterviewProfile(isAuthenticated);
+  const { config, freeLeft, freeTotal, canStart, refresh } = useInterviewProfile(isAuthenticated);
   const freeSessions = config?.freeSessions ?? freeTotal;
   const proQuestions = config?.proQuestionsPerSession ?? 30;
   const freeQuestions = config?.freeQuestionsPerSession ?? 10;
@@ -342,6 +342,7 @@ export default function InterviewLandingPage() {
         open={paymentOpen}
         plan={paymentPlan}
         onClose={() => setPaymentOpen(false)}
+        onSubmitted={() => void refresh()}
       />
     </div>
   );

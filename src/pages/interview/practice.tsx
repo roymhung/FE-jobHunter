@@ -1,7 +1,13 @@
 import { useMemo } from 'react';
 import { Button, Spin, Tabs, message } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
-import { PlayCircleOutlined } from '@ant-design/icons';
+import {
+  PlayCircleOutlined,
+  BarChartOutlined,
+  CalendarOutlined,
+  TrophyOutlined,
+  TagOutlined,
+} from '@ant-design/icons';
 import styles from '@/styles/interview.module.scss';
 import { loadSetupSelection } from '@/utils/interview-storage';
 import InterviewPaymentModal from '@/components/client/interview/payment-modal';
@@ -9,6 +15,15 @@ import InterviewBreadcrumb from '@/components/client/interview/interview-breadcr
 import { useAppSelector } from '@/redux/hooks';
 import { useInterviewProfile } from '@/hooks/useInterviewProfile';
 import { useState } from 'react';
+
+function formatSessionDateShort(iso?: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('vi-VN');
+  } catch {
+    return iso;
+  }
+}
 
 function formatSessionDate(iso?: string) {
   if (!iso) return '—';
@@ -22,7 +37,7 @@ function formatSessionDate(iso?: string) {
 export default function InterviewPracticePage() {
   const navigate = useNavigate();
   const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
-  const { me, loading, freeLeft, freeTotal, proActive, canStart, config } =
+  const { me, loading, freeLeft, freeTotal, proActive, canStart, config, refresh } =
     useInterviewProfile(isAuthenticated);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<'year' | 'lifetime'>('year');
@@ -73,6 +88,21 @@ export default function InterviewPracticePage() {
     ? (config?.proQuestionsPerSession ?? 30)
     : (config?.freeQuestionsPerSession ?? 10);
 
+  const progressStats = useMemo(() => {
+    let totalQuestions = 0;
+    let correctQuestions = 0;
+    for (const h of history) {
+      if (h.scorePercent == null) continue;
+      const perSession = questionsPerSession;
+      totalQuestions += perSession;
+      correctQuestions += Math.round((perSession * h.scorePercent) / 100);
+    }
+    const wrongQuestions = Math.max(0, totalQuestions - correctQuestions);
+    const correctPct = totalQuestions > 0 ? Math.round((correctQuestions / totalQuestions) * 100) : 0;
+    const wrongPct = totalQuestions > 0 ? 100 - correctPct : 0;
+    return { totalQuestions, correctQuestions, wrongQuestions, correctPct, wrongPct };
+  }, [history, questionsPerSession]);
+
   return (
     <div className={`${styles.page} ${styles.practicePage}`}>
       <div className={styles.container}>
@@ -92,6 +122,15 @@ export default function InterviewPracticePage() {
           </div>
         ) : (
           <>
+            {me?.pendingOrder && !proActive ? (
+              <div className={styles.card} style={{ marginBottom: 16, borderColor: '#c7d2fe' }}>
+                <strong>Đơn Pro đang chờ duyệt</strong>
+                <p style={{ margin: '8px 0 0', color: '#64748b' }}>
+                  Mã đơn #{me.pendingOrder.id}
+                  {me.pendingOrder.transferSubmitted ? ' · Đã báo chuyển khoản' : ' · Hãy hoàn tất chuyển khoản'}
+                </p>
+              </div>
+            ) : null}
             <div className={styles.card}>
               <div className={styles.cardRow}>
                 <div>
@@ -125,28 +164,66 @@ export default function InterviewPracticePage() {
             </div>
 
             <div className={styles.card}>
-              <strong>Tiến độ của bạn</strong>
-              <div
-                style={{
-                  display: 'grid',
-                  gap: 24,
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  marginTop: 16,
-                }}
-              >
-                <div className={styles.progressPlaceholder} title="Biểu đồ tiến độ" />
-                <div>
-                  <div className={styles.statLine}>
-                    <span>Lượt free còn</span>
-                    <strong>{proActive ? '∞ (Pro)' : `${freeLeft}/${freeTotal}`}</strong>
+              <div className={styles.progressCardHead}>
+                <span className={styles.progressCardIcon}>
+                  <BarChartOutlined />
+                </span>
+                Tiến độ của bạn
+              </div>
+              <div className={styles.progressDashboard}>
+                <div className={styles.progressChartBlock}>
+                  <div
+                    className={styles.progressDonut}
+                    style={{
+                      background:
+                        progressStats.totalQuestions > 0
+                          ? `conic-gradient(#22c55e 0 ${progressStats.correctPct}%, #f97316 ${progressStats.correctPct}% 100%)`
+                          : '#e2e8f0',
+                    }}
+                  >
+                    <div className={styles.progressDonutInner}>
+                      <strong>{progressStats.totalQuestions}</strong>
+                      <span>câu</span>
+                    </div>
                   </div>
-                  <div className={styles.statLine}>
-                    <span>Lần làm gần nhất</span>
-                    <strong>{formatSessionDate(lastDate)}</strong>
+                  <div className={styles.progressLegend}>
+                    <div className={styles.progressLegendItem}>
+                      <span className={`${styles.progressLegendDot} ${styles.ok}`} />
+                      {progressStats.correctQuestions} Đúng · {progressStats.correctPct}%
+                    </div>
+                    <div className={styles.progressLegendItem}>
+                      <span className={`${styles.progressLegendDot} ${styles.bad}`} />
+                      {progressStats.wrongQuestions} Sai · {progressStats.wrongPct}%
+                    </div>
                   </div>
-                  <div className={styles.statLine}>
-                    <span>Điểm cao nhất</span>
-                    <strong>{bestScore != null ? `${bestScore}%` : '—'}</strong>
+                </div>
+                <div className={styles.progressStats}>
+                  <div className={styles.progressStatRow}>
+                    <span className={styles.progressStatIcon}>
+                      <TagOutlined />
+                    </span>
+                    <div className={styles.progressStatText}>
+                      <span>Lượt free còn</span>
+                      <strong>{proActive ? '∞ (Pro)' : `${freeLeft}/${freeTotal}`}</strong>
+                    </div>
+                  </div>
+                  <div className={styles.progressStatRow}>
+                    <span className={styles.progressStatIcon}>
+                      <CalendarOutlined />
+                    </span>
+                    <div className={styles.progressStatText}>
+                      <span>Lần làm gần nhất</span>
+                      <strong>{formatSessionDateShort(lastDate)}</strong>
+                    </div>
+                  </div>
+                  <div className={styles.progressStatRow}>
+                    <span className={styles.progressStatIcon}>
+                      <TrophyOutlined />
+                    </span>
+                    <div className={styles.progressStatText}>
+                      <span>Điểm cao nhất</span>
+                      <strong>{bestScore != null ? `${bestScore}%` : '—'}</strong>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -223,7 +300,12 @@ export default function InterviewPracticePage() {
         )}
       </div>
 
-      <InterviewPaymentModal open={paymentOpen} plan={paymentPlan} onClose={() => setPaymentOpen(false)} />
+      <InterviewPaymentModal
+        open={paymentOpen}
+        plan={paymentPlan}
+        onClose={() => setPaymentOpen(false)}
+        onSubmitted={() => void refresh()}
+      />
     </div>
   );
 }

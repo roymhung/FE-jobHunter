@@ -24,6 +24,32 @@ export interface IInterviewMe {
     scorePercent?: number;
     passed: boolean;
   }[];
+  pendingOrder?: IInterviewPendingOrder | null;
+}
+
+export type InterviewPlanCode = 'PRO_YEAR' | 'PRO_LIFETIME';
+export type InterviewOrderStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED';
+
+export interface IInterviewPendingOrder {
+  id: number;
+  planCode: InterviewPlanCode;
+  status: InterviewOrderStatus;
+  transferSubmitted: boolean;
+}
+
+export interface IInterviewOrder {
+  id: number;
+  planCode: InterviewPlanCode;
+  status: InterviewOrderStatus;
+  amountVnd: number;
+  bankName: string;
+  bankAccount: string;
+  bankHolder: string;
+  transferContent: string;
+  createdAt?: string;
+  transferSubmittedAt?: string | null;
+  userId?: number;
+  userEmail?: string;
 }
 
 export interface IInterviewQuestionApi {

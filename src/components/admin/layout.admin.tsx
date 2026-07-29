@@ -10,6 +10,7 @@ import {
     AliwangwangOutlined,
     BugOutlined,
     ScheduleOutlined,
+    ThunderboltOutlined,
 } from '@ant-design/icons';
 import { Layout, Menu, Dropdown, Space, message, Avatar, Button } from 'antd';
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -70,6 +71,8 @@ const LayoutAdmin = () => {
                 && item.method === ALL_PERMISSIONS.USERS.GET_PAGINATE.method
             )
 
+            const isSuperAdmin = user?.role?.name === 'SUPER_ADMIN';
+
             const full = [
                 {
                     label: <Link to='/admin'>Dashboard</Link>,
@@ -108,6 +111,11 @@ const LayoutAdmin = () => {
                     key: '/admin/role',
                     icon: <ExceptionOutlined />
                 }] : []),
+                ...(isSuperAdmin || ACL_ENABLE === 'false' ? [{
+                    label: <Link to='/admin/interview-orders'>Interview Pro</Link>,
+                    key: '/admin/interview-orders',
+                    icon: <ThunderboltOutlined />
+                }] : []),
 
 
 
@@ -115,7 +123,7 @@ const LayoutAdmin = () => {
 
             setMenuItems(full);
         }
-    }, [permissions])
+    }, [permissions, user?.role?.name])
     useEffect(() => {
         setActiveMenu(location.pathname)
     }, [location])

@@ -3,6 +3,7 @@ import { IBackendRes } from '@/types/backend';
 import type {
   IInterviewConfig,
   IInterviewMe,
+  IInterviewOrder,
   IInterviewSessionApi,
   IInterviewTopic,
 } from '@/types/interview';
@@ -43,6 +44,30 @@ export const callInterviewSaveAnswers = (
 export const callInterviewSubmitSession = (id: string) => {
   return axios.post<IBackendRes<IInterviewSessionApi>>(`/api/v1/interview/sessions/${id}/submit`);
 };
+
+export const callInterviewCreateOrder = (plan: 'year' | 'lifetime') => {
+  return axios.post<IBackendRes<IInterviewOrder>>('/api/v1/interview/subscriptions/orders', { plan });
+};
+
+export const callInterviewTransferSubmitted = (orderId: number) => {
+  return axios.post<IBackendRes<IInterviewOrder>>(
+    `/api/v1/interview/subscriptions/orders/${orderId}/transfer-submitted`,
+  );
+};
+
+export const callInterviewListPendingOrders = () => {
+  return axios.get<IBackendRes<IInterviewOrder[]>>('/api/v1/interview/subscriptions/orders/pending');
+};
+
+export const callInterviewActivateOrder = (orderId: number) => {
+  return axios.post<IBackendRes<IInterviewOrder>>(
+    `/api/v1/interview/subscriptions/orders/${orderId}/activate`,
+  );
+};
+
+export function formatVnd(amount: number) {
+  return amount.toLocaleString('vi-VN');
+}
 
 export function unwrapInterviewData<T>(res: IBackendRes<T> | undefined): T | undefined {
   if (!res || res.error || res.data === undefined) return undefined;

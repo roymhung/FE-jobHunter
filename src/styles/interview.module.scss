@@ -628,6 +628,164 @@ $radius: 16px;
   margin: 0 auto 16px;
 }
 
+.progressCardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.progressCardIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eef2ff;
+  color: $accent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.progressDashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.progressChartBlock {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.progressDonut {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: #fff;
+  }
+}
+
+.progressDonutInner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  line-height: 1.2;
+
+  strong {
+    display: block;
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
+  }
+
+  span {
+    font-size: 13px;
+    color: $muted;
+    font-weight: 500;
+  }
+}
+
+.progressLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.progressLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.progressLegendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.ok {
+    background: #22c55e;
+  }
+
+  &.bad {
+    background: #f97316;
+  }
+}
+
+.progressStats {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.progressStatRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #f1f5f9;
+}
+
+.progressStatIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #eef2ff;
+  color: $accent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.progressStatText {
+  flex: 1;
+  min-width: 0;
+
+  span {
+    display: block;
+    font-size: 13px;
+    color: $muted;
+    margin-bottom: 2px;
+  }
+
+  strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: #312e81;
+  }
+}
+
 .statLine {
   display: flex;
   justify-content: space-between;
