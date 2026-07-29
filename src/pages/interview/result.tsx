@@ -23,7 +23,8 @@ export default function InterviewResultPage() {
 
   if (!session || !grade) return null;
 
-  const passed = grade.percent >= EXAM_PASS_PERCENT;
+  const passThreshold = session.passPercent ?? EXAM_PASS_PERCENT;
+  const passed = grade.percent >= passThreshold;
 
   return (
     <div className={`${styles.page} ${styles.pageInterview} ${styles.resultPage}`}>
@@ -56,8 +57,8 @@ export default function InterviewResultPage() {
         <div className={styles.resultList}>
           {session.questions.map((q, i) => {
             const user = session.answers[i];
-            const isCorrect = user === q.correctIndex;
-            const isWrong = user !== null && user !== q.correctIndex;
+            const isCorrect = q.correctIndex >= 0 && user === q.correctIndex;
+            const isWrong = user !== null && q.correctIndex >= 0 && user !== q.correctIndex;
             return (
               <div key={q.id} className={styles.resultItem}>
                 <div className={styles.resultItemHead}>

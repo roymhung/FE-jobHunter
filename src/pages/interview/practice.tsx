@@ -1,31 +1,40 @@
-import { useState } from 'react';
-import { Button, Modal, Tabs, message } from 'antd';
+import { useMemo } from 'react';
+import { Button, Spin, Tabs, message } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { PlayCircleOutlined } from '@ant-design/icons';
 import styles from '@/styles/interview.module.scss';
-import {
-  FREE_INTERVIEW_SESSIONS,
-  consumeFreeSession,
-  getFreeRemaining,
-  hasFreeSessionsLeft,
-  loadSetupSelection,
-} from '@/utils/interview-storage';
+import { loadSetupSelection } from '@/utils/interview-storage';
 import InterviewPaymentModal from '@/components/client/interview/payment-modal';
 import InterviewBreadcrumb from '@/components/client/interview/interview-breadcrumb';
 import { useAppSelector } from '@/redux/hooks';
+import { useInterviewProfile } from '@/hooks/useInterviewProfile';
+import { useState } from 'react';
+
+function formatSessionDate(iso?: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('vi-VN');
+  } catch {
+    return iso;
+  }
+}
 
 export default function InterviewPracticePage() {
   const navigate = useNavigate();
-  const email = useAppSelector((s) => s.account.user?.email);
-  const [remaining, setRemaining] = useState(() => getFreeRemaining(email));
-  const [sessionOpen, setSessionOpen] = useState(false);
+  const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
+  const { me, loading, freeLeft, freeTotal, proActive, canStart, config } =
+    useInterviewProfile(isAuthenticated);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<'year' | 'lifetime'>('year');
-  const [history, setHistory] = useState<{ id: number; date: string; score: number }[]>([]);
 
-  const refreshRemaining = () => {
-    setRemaining(getFreeRemaining(email));
-  };
+  const history = me?.recentSessions ?? [];
+
+  const bestScore = useMemo(() => {
+    const scores = history.map((h) => h.scorePercent).filter((s): s is number => s != null);
+    return scores.length ? Math.max(...scores) : null;
+  }, [history]);
+
+  const lastDate = history[0]?.submittedAt;
 
   const openPayment = (plan: 'year' | 'lifetime') => {
     setPaymentPlan(plan);
@@ -33,13 +42,22 @@ export default function InterviewPracticePage() {
   };
 
   const goSetup = () => {
+    if (!isAuthenticated) {
+      message.info('Vui lòng đăng nhập');
+      navigate(`/login?callback=${encodeURIComponent('/interview/setup')}`);
+      return;
+    }
+    if (!canStart) {
+      message.error('Đã hết lượt Free. Nâng cấp Pro để tiếp tục.');
+      openPayment('year');
+      return;
+    }
     navigate('/interview/setup');
   };
 
-  const startSession = () => {
-    if (!hasFreeSessionsLeft(email)) {
-      message.error(`Bạn đã hết ${FREE_INTERVIEW_SESSIONS} lượt Free. Vui lòng nâng cấp Pro.`);
-      setPaymentOpen(true);
+  const goReady = () => {
+    if (!canStart) {
+      openPayment('year');
       return;
     }
     const setup = loadSetupSelection();
@@ -48,26 +66,12 @@ export default function InterviewPracticePage() {
       navigate('/interview/setup');
       return;
     }
-    setSessionOpen(true);
+    navigate('/interview/ready');
   };
 
-  const confirmSession = () => {
-    if (!email) return;
-    const ok = consumeFreeSession(email);
-    setSessionOpen(false);
-    if (!ok) {
-      message.error('Không còn lượt miễn phí.');
-      refreshRemaining();
-      return;
-    }
-    const score = Math.floor(55 + Math.random() * 35);
-    setHistory((h) => [
-      { id: Date.now(), date: new Date().toLocaleString('vi-VN'), score },
-      ...h,
-    ].slice(0, 10));
-    refreshRemaining();
-    message.success(`Hoàn thành phiên luyện (demo). Điểm: ${score}/100. Còn ${getFreeRemaining(email)} lượt.`);
-  };
+  const questionsPerSession = proActive
+    ? (config?.proQuestionsPerSession ?? 30)
+    : (config?.freeQuestionsPerSession ?? 10);
 
   return (
     <div className={`${styles.page} ${styles.practicePage}`}>
@@ -78,123 +82,146 @@ export default function InterviewPracticePage() {
           Luyện phỏng vấn IT — theo dõi tiến độ, lấp khoảng trống
         </h1>
         <p className={styles.practiceDesc}>
-          Chọn chủ đề AI, Backend, DevOps… Free: điểm & đúng/sai. Pro Năm / Trọn đời: giải thích chi tiết + luyện không giới hạn.
+          Phiên thi thật qua server: {questionsPerSession} câu / {config?.durationMinutes ?? 45} phút.
+          Pro: không giới hạn lượt trong kỳ hiệu lực.
         </p>
 
-        <div className={styles.card}>
-          <div className={styles.cardRow}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <PlayCircleOutlined style={{ fontSize: 22, color: '#3f3ab3' }} />
-                <strong style={{ fontSize: 17 }}>Bắt đầu luyện</strong>
-                <span className={styles.freePill}>
-                  Free · còn {remaining}/{FREE_INTERVIEW_SESSIONS} lượt
-                </span>
-              </div>
-              <p style={{ color: '#64748b', margin: 0, fontSize: 14 }}>
-                Chọn tối đa 3 chủ đề, level và độ khó — rồi bắt đầu khi đã sẵn sàng.
-              </p>
-            </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <Spin />
           </div>
-          <Button
-            type="primary"
-            block
-            size="large"
-            className={styles.btnPrimary}
-            style={{ marginTop: 20 }}
-            onClick={remaining <= 0 ? () => openPayment('year') : goSetup}
-          >
-            {remaining <= 0 ? 'Đã hết lượt Free — Nâng cấp Pro' : 'Chọn đề & bắt đầu →'}
-          </Button>
-          {loadSetupSelection()?.topics?.length ? (
-            <Button block size="large" style={{ marginTop: 8 }} onClick={startSession}>
-              Bắt đầu phiên (đã có tiêu chí)
-            </Button>
-          ) : null}
-        </div>
-
-        <div className={styles.card}>
-          <strong>Tiến độ của bạn</strong>
-          <div style={{ display: 'grid', gap: 24, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginTop: 16 }}>
-            <div className={styles.progressPlaceholder} title="Biểu đồ tiến độ" />
-            <div>
-              <div className={styles.statLine}><span>Lượt free còn</span><strong>{remaining}/{FREE_INTERVIEW_SESSIONS}</strong></div>
-              <div className={styles.statLine}><span>Lần làm gần nhất</span><strong>{history[0]?.date ?? '—'}</strong></div>
-              <div className={styles.statLine}><span>Điểm cao nhất</span><strong>{history.length ? Math.max(...history.map((x) => x.score)) : '—'}</strong></div>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.card}>
-          <Tabs
-            items={[
-              {
-                key: 'history',
-                label: 'Lịch sử làm bài',
-                children: history.length === 0 ? (
-                  <div className={styles.historyEmpty}>Chưa có lịch sử làm bài.</div>
-                ) : (
-                  <ul style={{ padding: 0, listStyle: 'none' }}>
-                    {history.map((h) => (
-                      <li key={h.id} className={styles.statLine}>
-                        <span>{h.date}</span>
-                        <strong>{h.score}/100</strong>
-                      </li>
-                    ))}
-                  </ul>
-                ),
-              },
-              {
-                key: 'saved',
-                label: 'Câu đã lưu',
-                children: <div className={styles.historyEmpty}>Chưa có câu đã lưu.</div>,
-              },
-            ]}
-          />
-        </div>
-
-        <div className={`${styles.card} ${styles.planCard}`}>
-          <div className={styles.planBar}>
-            <div className={styles.planInfo}>
-              <span className={styles.planLabel}>Gói của bạn</span>
-              <div className={styles.planTierRow}>
-                <span className={styles.planTierBadge}>FREE</span>
-                <span className={styles.planTierMeta}>
-                  Còn {remaining}/{FREE_INTERVIEW_SESSIONS} lượt luyện
-                </span>
+        ) : (
+          <>
+            <div className={styles.card}>
+              <div className={styles.cardRow}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <PlayCircleOutlined style={{ fontSize: 22, color: '#3f3ab3' }} />
+                    <strong style={{ fontSize: 17 }}>Bắt đầu luyện</strong>
+                    <span className={styles.freePill}>
+                      {proActive ? 'Pro · không giới hạn lượt' : `Free · còn ${freeLeft}/${freeTotal} lượt`}
+                    </span>
+                  </div>
+                  <p style={{ color: '#64748b', margin: 0, fontSize: 14 }}>
+                    Chọn tối đa {config?.maxTopics ?? 3} chủ đề, loại câu và cấp bậc — rồi xác nhận tại trang sẵn sàng.
+                  </p>
+                </div>
               </div>
-              <p className={styles.planHint}>
-                Nâng cấp Pro để luyện không giới hạn, 30 câu/phiên và giải thích chi tiết sau mỗi câu.
-              </p>
-            </div>
-            <div className={styles.planActions}>
               <Button
                 type="primary"
-                size="large"
                 block
+                size="large"
                 className={styles.btnPrimary}
-                onClick={() => openPayment('year')}
+                style={{ marginTop: 20 }}
+                onClick={canStart ? goSetup : () => openPayment('year')}
               >
-                Nâng cấp Pro Năm
+                {!canStart ? 'Đã hết lượt Free — Nâng cấp Pro' : 'Chọn đề & tiếp tục →'}
               </Button>
-              <Link to="/interview#pricing" className={styles.planLink}>
-                Xem gói & nâng cấp →
-              </Link>
+              {loadSetupSelection()?.topics?.length ? (
+                <Button block size="large" style={{ marginTop: 8 }} onClick={goReady}>
+                  Đi tới sẵn sàng làm bài (đã có tiêu chí)
+                </Button>
+              ) : null}
             </div>
-          </div>
-        </div>
-      </div>
 
-      <Modal
-        title="Bắt đầu phiên luyện"
-        open={sessionOpen}
-        onCancel={() => setSessionOpen(false)}
-        onOk={confirmSession}
-        okText="Bắt đầu (trừ 1 lượt)"
-        cancelText="Hủy"
-      >
-        <p>Phiên demo: 10 câu (Free). Xác nhận sẽ trừ <strong>1</strong> trong số <strong>{remaining}</strong> lượt còn lại.</p>
-      </Modal>
+            <div className={styles.card}>
+              <strong>Tiến độ của bạn</strong>
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 24,
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  marginTop: 16,
+                }}
+              >
+                <div className={styles.progressPlaceholder} title="Biểu đồ tiến độ" />
+                <div>
+                  <div className={styles.statLine}>
+                    <span>Lượt free còn</span>
+                    <strong>{proActive ? '∞ (Pro)' : `${freeLeft}/${freeTotal}`}</strong>
+                  </div>
+                  <div className={styles.statLine}>
+                    <span>Lần làm gần nhất</span>
+                    <strong>{formatSessionDate(lastDate)}</strong>
+                  </div>
+                  <div className={styles.statLine}>
+                    <span>Điểm cao nhất</span>
+                    <strong>{bestScore != null ? `${bestScore}%` : '—'}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.card}>
+              <Tabs
+                items={[
+                  {
+                    key: 'history',
+                    label: 'Lịch sử làm bài',
+                    children:
+                      history.length === 0 ? (
+                        <div className={styles.historyEmpty}>Chưa có lịch sử làm bài trên server.</div>
+                      ) : (
+                        <ul style={{ padding: 0, listStyle: 'none' }}>
+                          {history.map((h) => (
+                            <li key={h.sessionId} className={styles.statLine}>
+                              <span>{formatSessionDate(h.submittedAt)}</span>
+                              <strong>
+                                {h.scorePercent != null ? `${h.scorePercent}%` : '—'}
+                                {h.passed ? ' · Đạt' : ''}
+                              </strong>
+                            </li>
+                          ))}
+                        </ul>
+                      ),
+                  },
+                  {
+                    key: 'saved',
+                    label: 'Câu đã lưu',
+                    children: <div className={styles.historyEmpty}>Chưa có câu đã lưu.</div>,
+                  },
+                ]}
+              />
+            </div>
+
+            <div className={`${styles.card} ${styles.planCard}`}>
+              <div className={styles.planBar}>
+                <div className={styles.planInfo}>
+                  <span className={styles.planLabel}>Gói của bạn</span>
+                  <div className={styles.planTierRow}>
+                    <span className={styles.planTierBadge}>{proActive ? 'PRO' : 'FREE'}</span>
+                    <span className={styles.planTierMeta}>
+                      {proActive
+                        ? 'Luyện không giới hạn lượt'
+                        : `Còn ${freeLeft}/${freeTotal} lượt luyện`}
+                    </span>
+                  </div>
+                  <p className={styles.planHint}>
+                    Nâng cấp Pro để luyện không giới hạn, {config?.proQuestionsPerSession ?? 30} câu/phiên và giải
+                    thích chi tiết sau mỗi câu.
+                  </p>
+                </div>
+                <div className={styles.planActions}>
+                  {!proActive && (
+                    <Button
+                      type="primary"
+                      size="large"
+                      block
+                      className={styles.btnPrimary}
+                      onClick={() => openPayment('year')}
+                    >
+                      Nâng cấp Pro Năm
+                    </Button>
+                  )}
+                  <Link to="/interview#pricing" className={styles.planLink}>
+                    Xem gói & nâng cấp →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       <InterviewPaymentModal open={paymentOpen} plan={paymentPlan} onClose={() => setPaymentOpen(false)} />
     </div>

@@ -15,7 +15,15 @@ import {
   formatTopicLabels,
 } from '@/utils/interview-setup-options';
 import {
+  callInterviewSaveAnswers,
+  callInterviewSubmitSession,
+  interviewApiError,
+  unwrapInterviewData,
+} from '@/utils/interview-api';
+import {
+  buildAnswersPayload,
   countAnswered,
+  examSessionFromApi,
   getExamSession,
   saveExamSession,
   type ExamSession,
@@ -42,6 +50,8 @@ export default function InterviewExamPage() {
   const [submitModal, setSubmitModal] = useState<'none' | 'partial' | 'confirm'>('none');
   const autoSubmittedRef = useRef(false);
   const timerSyncedRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!session) {
@@ -74,6 +84,18 @@ export default function InterviewExamPage() {
   const persist = useCallback((next: ExamSession) => {
     setSession(next);
     saveExamSession(next);
+    if (next.apiBacked) {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(async () => {
+        const res = await callInterviewSaveAnswers(next.id, buildAnswersPayload(next));
+        const dto = unwrapInterviewData(res);
+        if (dto) {
+          const synced = examSessionFromApi(dto, next.passPercent);
+          saveExamSession(synced);
+          setSession((cur) => (cur?.id === synced.id ? synced : cur));
+        }
+      }, 400);
+    }
   }, []);
 
   const selectAnswer = (optionIndex: number) => {
@@ -92,8 +114,25 @@ export default function InterviewExamPage() {
     setSubmitModal('confirm');
   };
 
-  const finalizeSubmit = useCallback(() => {
+  const finalizeSubmit = useCallback(async () => {
     if (!session) return;
+    setSubmitting(true);
+    if (session.apiBacked) {
+      await callInterviewSaveAnswers(session.id, buildAnswersPayload(session));
+      const res = await callInterviewSubmitSession(session.id);
+      const dto = unwrapInterviewData(res);
+      if (!dto) {
+        message.error(interviewApiError(res));
+        setSubmitting(false);
+        return;
+      }
+      const submitted = examSessionFromApi(dto, session.passPercent);
+      saveExamSession(submitted);
+      setSubmitModal('none');
+      setSubmitting(false);
+      navigate('/interview/result');
+      return;
+    }
     const submitted: ExamSession = {
       ...session,
       submitted: true,
@@ -101,6 +140,7 @@ export default function InterviewExamPage() {
     };
     saveExamSession(submitted);
     setSubmitModal('none');
+    setSubmitting(false);
     navigate('/interview/result');
   }, [session, navigate]);
 
@@ -249,7 +289,8 @@ export default function InterviewExamPage() {
         onCancel={() => setSubmitModal('none')}
         okText="Nộp bài"
         cancelText="Hủy"
-        onOk={finalizeSubmit}
+        confirmLoading={submitting}
+        onOk={() => void finalizeSubmit()}
       >
         <p>
           Bạn đã trả lời <strong>{total}/{total}</strong> câu.

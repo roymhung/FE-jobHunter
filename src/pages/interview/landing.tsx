@@ -7,12 +7,11 @@ import {
 } from '@ant-design/icons';
 import styles from '@/styles/interview.module.scss';
 import {
-  FREE_INTERVIEW_SESSIONS,
   getFreeRemaining,
-  hasFreeSessionsLeft,
 } from '@/utils/interview-storage';
 import InterviewPaymentModal from '@/components/client/interview/payment-modal';
 import { useAppSelector } from '@/redux/hooks';
+import { useInterviewProfile } from '@/hooks/useInterviewProfile';
 
 const TOPIC_GROUPS = [
   { title: 'Nền tảng', tags: ['Java Core', 'OOP', 'Linux', 'Git'] },
@@ -27,11 +26,17 @@ export default function InterviewLandingPage() {
   const location = useLocation();
   const isAuthenticated = useAppSelector((s) => s.account.isAuthenticated);
   const userEmail = useAppSelector((s) => s.account.user?.email);
+  const { config, freeLeft, freeTotal, canStart } = useInterviewProfile(isAuthenticated);
+  const freeSessions = config?.freeSessions ?? freeTotal;
+  const proQuestions = config?.proQuestionsPerSession ?? 30;
+  const freeQuestions = config?.freeQuestionsPerSession ?? 10;
+  const durationMin = config?.durationMinutes ?? 45;
+  const remaining = isAuthenticated ? freeLeft : getFreeRemaining(userEmail);
+
   const pricingRef = useRef<HTMLElement>(null);
   const [startOpen, setStartOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<'year' | 'lifetime'>('year');
-  const remaining = getFreeRemaining(isAuthenticated ? userEmail : undefined);
 
   const scrollToPricing = () => {
     pricingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -55,7 +60,7 @@ export default function InterviewLandingPage() {
   };
 
   const confirmStart = () => {
-    if (!hasFreeSessionsLeft(userEmail)) {
+    if (!canStart) {
       message.warning('Bạn đã hết lượt Free. Vui lòng nâng cấp gói Pro.');
       setStartOpen(false);
       scrollToPricing();
@@ -84,7 +89,7 @@ export default function InterviewLandingPage() {
                 <span className={styles.highlight}>Tự tin chinh phục mọi cơ hội IT</span>
               </h1>
               <p className={styles.heroDesc}>
-                Hơn 1.000+ câu hỏi trắc nghiệm & tự luận, 22+ chủ đề. Mỗi phiên 30 câu / 45 phút,
+                Hơn 1.000+ câu hỏi trắc nghiệm & tự luận, 22+ chủ đề. Free {freeQuestions} câu / Pro {proQuestions} câu — {durationMin} phút/phiên,
                 chấm điểm tức thì và giải thích chi tiết (gói Pro).
               </p>
               <div className={styles.heroActions}>
@@ -104,8 +109,8 @@ export default function InterviewLandingPage() {
               <div className={styles.statsRow}>
                 <div><strong>1.000+</strong><span>Câu hỏi</span></div>
                 <div><strong>22+</strong><span>Chủ đề</span></div>
-                <div><strong>30</strong><span>Câu / phiên</span></div>
-                <div><strong>45</strong><span>Phút / phiên</span></div>
+                <div><strong>{proQuestions}</strong><span>Câu / phiên (Pro)</span></div>
+                <div><strong>{durationMin}</strong><span>Phút / phiên</span></div>
               </div>
             </div>
             <div className={styles.heroMock}>
@@ -132,7 +137,7 @@ export default function InterviewLandingPage() {
             <div className={styles.stepCard}>
               <div className={styles.num}>02</div>
               <h3>Làm bài có giới hạn thời gian</h3>
-              <p>30 câu trong 45 phút — giống phỏng vấn thật.</p>
+              <p>{proQuestions} câu (Pro) hoặc {freeQuestions} câu (Free) trong {durationMin} phút — giống phỏng vấn thật.</p>
             </div>
             <div className={styles.stepCard}>
               <div className={styles.num}>03</div>
@@ -207,8 +212,8 @@ export default function InterviewLandingPage() {
               <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>Dùng thử miễn phí</p>
               <div className={styles.priceAmount}>0đ</div>
               <ul className={styles.priceFeatures}>
-                <li>{FREE_INTERVIEW_SESSIONS} lượt luyện (tổng)</li>
-                <li>10 câu / phiên</li>
+                <li>{freeSessions} lượt luyện (tổng)</li>
+                <li>{freeQuestions} câu / phiên</li>
                 <li>Giải thích đầy đủ sau mỗi câu</li>
                 <li>Lưu lịch sử 3 phiên gần nhất</li>
               </ul>
@@ -226,7 +231,7 @@ export default function InterviewLandingPage() {
               </div>
               <ul className={styles.priceFeatures}>
                 <li>Không giới hạn lượt trong 12 tháng</li>
-                <li>30 câu / phiên</li>
+                <li>{proQuestions} câu / phiên</li>
                 <li>1.500+ câu hỏi premium</li>
                 <li>Lịch sử & phân tích chi tiết</li>
               </ul>
@@ -271,15 +276,15 @@ export default function InterviewLandingPage() {
               <tbody>
                 <tr>
                   <td>Số lượt luyện</td>
-                  <td>{FREE_INTERVIEW_SESSIONS} lượt</td>
+                  <td>{freeSessions} lượt</td>
                   <td>12 tháng không giới hạn</td>
                   <td>Vĩnh viễn</td>
                 </tr>
                 <tr>
                   <td>Câu / phiên</td>
-                  <td>10</td>
-                  <td>30</td>
-                  <td>30</td>
+                  <td>{freeQuestions}</td>
+                  <td>{proQuestions}</td>
+                  <td>{proQuestions}</td>
                 </tr>
                 <tr>
                   <td>Giải thích chi tiết</td>
@@ -307,7 +312,7 @@ export default function InterviewLandingPage() {
 
       <div className={styles.ctaBottom}>
         <h2>Sẵn sàng cho buổi phỏng vấn tiếp theo?</h2>
-        <p>Bắt đầu với {FREE_INTERVIEW_SESSIONS} lượt miễn phí — không cần thẻ.</p>
+        <p>Bắt đầu với {freeSessions} lượt miễn phí — không cần thẻ.</p>
         <Button size="large" className={styles.ctaBottomBtn} onClick={onStartPractice}>
           Bắt đầu luyện ngay
         </Button>
@@ -325,11 +330,11 @@ export default function InterviewLandingPage() {
         ]}
       >
         <p>
-          Gói <strong>Free</strong> cho phép <strong>{FREE_INTERVIEW_SESSIONS} lượt</strong> luyện phỏng vấn miễn phí.
+          Gói <strong>Free</strong> cho phép <strong>{freeSessions} lượt</strong> luyện phỏng vấn miễn phí.
           Sau khi dùng hết, bạn cần nâng cấp Pro để tiếp tục.
         </p>
         <p style={{ marginTop: 12, fontSize: 16 }}>
-          Bạn còn: <strong style={{ color: '#6366f1' }}>{remaining}/{FREE_INTERVIEW_SESSIONS}</strong> lượt.
+          Bạn còn: <strong style={{ color: '#6366f1' }}>{remaining}/{freeSessions}</strong> lượt.
         </p>
       </Modal>
 

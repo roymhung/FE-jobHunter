@@ -1,4 +1,5 @@
-import { InterviewQuestion, pickExamQuestions, EXAM_DURATION_SEC } from './interview-questions';
+import type { IInterviewSessionApi } from '@/types/interview';
+import type { InterviewQuestion } from './interview-questions';
 import type { InterviewSetupSelection } from './interview-storage';
 
 const SESSION_KEY = 'jobgohunter_interview_exam_session';
@@ -12,22 +13,54 @@ export interface ExamSession {
   endsAt: number;
   submitted: boolean;
   submittedAt?: number;
+  /** Phiên tạo từ backend */
+  apiBacked?: boolean;
+  scorePercent?: number;
+  passPercent?: number;
 }
 
-export function createExamSession(setup: InterviewSetupSelection): ExamSession {
-  const questions = pickExamQuestions(setup.topics);
-  const now = Date.now();
-  const session: ExamSession = {
-    id: `exam-${now}`,
-    setup,
+export function examSessionFromApi(dto: IInterviewSessionApi, passPercent?: number): ExamSession {
+  const questions: InterviewQuestion[] = dto.questions
+    .slice()
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((q) => ({
+      id: String(q.questionId),
+      topic: q.topicCode,
+      text: q.content,
+      options: q.options ?? [],
+      correctIndex: q.correctIndex ?? -1,
+      explanation: q.explanation ?? '',
+    }));
+
+  const answers = dto.questions
+    .slice()
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((q) => (q.selectedIndex != null ? q.selectedIndex : null));
+
+  return {
+    id: dto.id,
+    setup: {
+      topics: dto.topics ?? [],
+      difficulty: dto.questionType,
+      level: dto.level,
+    },
     questions,
-    answers: Array(questions.length).fill(null),
-    startedAt: now,
-    endsAt: now + EXAM_DURATION_SEC * 1000,
-    submitted: false,
+    answers,
+    startedAt: Date.parse(dto.startedAt),
+    endsAt: Date.parse(dto.endsAt),
+    submitted: dto.status === 'SUBMITTED',
+    submittedAt: dto.submittedAt ? Date.parse(dto.submittedAt) : undefined,
+    apiBacked: true,
+    scorePercent: dto.scorePercent ?? undefined,
+    passPercent,
   };
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  return session;
+}
+
+export function buildAnswersPayload(session: ExamSession) {
+  return session.questions.map((_, orderIndex) => ({
+    orderIndex,
+    selectedIndex: session.answers[orderIndex],
+  }));
 }
 
 export function getExamSession(): ExamSession | null {
@@ -53,6 +86,24 @@ export function countAnswered(session: ExamSession) {
 }
 
 export function gradeSession(session: ExamSession) {
+  if (session.submitted && session.scorePercent != null && session.apiBacked) {
+    const total = session.questions.length;
+    let correct = 0;
+    let unanswered = 0;
+    session.questions.forEach((q, i) => {
+      const a = session.answers[i];
+      if (a === null) unanswered++;
+      else if (q.correctIndex >= 0 && a === q.correctIndex) correct++;
+    });
+    const wrong = total - correct - unanswered;
+    return {
+      correct,
+      wrong,
+      unanswered,
+      total,
+      percent: session.scorePercent,
+    };
+  }
   let correct = 0;
   let unanswered = 0;
   session.questions.forEach((q, i) => {
