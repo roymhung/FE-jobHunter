@@ -3,6 +3,7 @@ import { IBackendRes, IModelPaginate } from '@/types/backend';
 import type {
   IInterviewConfig,
   IInterviewMe,
+  IVnpayPayment,
   IInterviewOrder,
   IInterviewQuestionAdmin,
   IInterviewSessionApi,
@@ -54,6 +55,16 @@ export const callInterviewTransferSubmitted = (orderId: number) => {
   return axios.post<IBackendRes<IInterviewOrder>>(
     `/api/v1/interview/subscriptions/orders/${orderId}/transfer-submitted`,
   );
+};
+
+export const callInterviewInitiateVnpay = (orderId: number) => {
+  return axios.post<IBackendRes<IVnpayPayment>>(
+    `/api/v1/interview/subscriptions/orders/${orderId}/vnpay`,
+  );
+};
+
+export const callInterviewGetOrder = (orderId: number) => {
+  return axios.get<IBackendRes<IInterviewOrder>>(`/api/v1/interview/subscriptions/orders/${orderId}`);
 };
 
 export const callInterviewListPendingOrders = () => {

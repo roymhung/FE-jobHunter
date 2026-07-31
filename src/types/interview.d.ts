@@ -30,12 +30,14 @@ export interface IInterviewMe {
 
 export type InterviewPlanCode = 'PRO_YEAR' | 'PRO_LIFETIME';
 export type InterviewOrderStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED';
+export type InterviewPaymentMethod = 'BANK_TRANSFER' | 'VNPAY';
 
 export interface IInterviewPendingOrder {
   id: number;
   planCode: InterviewPlanCode;
   status: InterviewOrderStatus;
   transferSubmitted: boolean;
+  paymentMethod?: InterviewPaymentMethod | null;
 }
 
 export interface IInterviewOrder {
@@ -51,6 +53,15 @@ export interface IInterviewOrder {
   transferSubmittedAt?: string | null;
   userId?: number;
   userEmail?: string;
+  paymentMethod?: InterviewPaymentMethod | null;
+  paidAt?: string | null;
+  vnpayEnabled?: boolean;
+}
+
+export interface IVnpayPayment {
+  orderId: number;
+  payUrl: string;
+  txnRef: string;
 }
 
 export interface IInterviewQuestionAdmin {

@@ -74,6 +74,11 @@ export default function AdminInterviewOrdersPage() {
       render: (v: number) => `${formatVnd(v)} đ`,
     },
     {
+      title: 'Phương thức',
+      dataIndex: 'paymentMethod',
+      render: (v) => (v === 'VNPAY' ? <Tag color="blue">VNPay</Tag> : <Tag>Chuyển khoản</Tag>),
+    },
+    {
       title: 'Đã báo CK',
       dataIndex: 'transferSubmittedAt',
       render: (v) => (v ? <Tag color="blue">Có</Tag> : <Tag>Chưa</Tag>),
